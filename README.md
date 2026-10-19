@@ -7,6 +7,20 @@ week-at-a-glance diary, and everything saved automatically.
 Native C++ against the Haiku API (Interface Kit + layout API). Optional
 two-way sync with Google Calendar and Google Contacts uses libcurl.
 
+## Install
+
+Download `ringbinder-1.0.0-1-x86_64.hpkg` from the
+[latest release](https://github.com/idumych/ringbinder/releases/latest) and
+install it from a Terminal:
+
+```sh
+pkgman install ./ringbinder-1.0.0-1-x86_64.hpkg
+```
+
+Ringbinder then appears under **Applications** in the Deskbar menu, and as
+`ringbinder` in the Terminal. It needs Haiku R1/beta6 or later (it has been
+tested on Renku OS) and libcurl, which pkgman installs if it's missing.
+
 ## Sections
 
 | Tab | What it does |
@@ -109,6 +123,8 @@ Then in this folder:
 ```sh
 make
 ```
+
+`make hpkg` builds the package instead (see `packaging/haiku/build-hpkg.sh`).
 
 The app is placed in `objects.x86_64-cc13-release/Ringbinder` (the folder
 name depends on your architecture and compiler). Without the makefile-engine:
