@@ -1,0 +1,32 @@
+name			ringbinder
+version			@VERSION@
+architecture	@ARCH@
+summary			"A tabbed personal organizer in a leather binder"
+description		"Ringbinder is a personal organizer modelled on the classic late-90s \
+desktop organizers: a leather binder with coloured section tabs for Calendar \
+(a two-page week-at-a-glance diary), To Do, Address, Calls, a year Planner, \
+Notepad and Anniversaries. Everything is saved automatically.
+
+Optional two-way sync with Google Calendar and Google Contacts, using your \
+own Google OAuth client."
+packager		"@PACKAGER@"
+vendor			"Ringbinder"
+copyrights		{
+	"2026 the Ringbinder authors"
+}
+licenses		{
+	"MIT"
+}
+urls			{
+	"https://github.com/idumych/ringbinder"
+}
+
+provides		{
+	ringbinder = @PVERSION@
+	app:Ringbinder = @PVERSION@
+	cmd:ringbinder
+}
+requires		{
+	haiku >= r1~beta6
+	lib:libcurl
+}

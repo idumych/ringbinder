@@ -1,0 +1,7 @@
+/objects.*/
+/obj/
+/Ringbinder
+*.rsrc
+*.hpkg
+sync/tests/sync_test
+sync/tests/auth_test
