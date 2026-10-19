@@ -19,12 +19,12 @@ two-way sync with Google Calendar and Google Contacts uses libcurl.
 
 ## Install
 
-Download `ringbinder-1.0.1-1-x86_64.hpkg` from the
+Download `ringbinder-1.1.0-1-x86_64.hpkg` from the
 [latest release](https://github.com/idumych/ringbinder/releases/latest) and
 install it from a Terminal:
 
 ```sh
-pkgman install ./ringbinder-1.0.1-1-x86_64.hpkg
+pkgman install ./ringbinder-1.1.0-1-x86_64.hpkg
 ```
 
 Ringbinder then appears under **Applications** in the Deskbar menu, and as
