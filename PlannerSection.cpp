@@ -49,18 +49,12 @@ static const float kLegendHeight = 28;
 // Like a paper year planner, the columns are weekdays rather than dates:
 // each month's row starts under the weekday of its 1st, so weekends line
 // up as vertical stripes. A month can span 37 columns (starting on a
-// Sunday, with 31 days).
+// Sunday, with 31 days); the cells outside it are left blank.
 static const int kColumns = 37;
 
-static const rgb_color kAltRowColor = { 250, 243, 210, 255 };
-static const rgb_color kWeekendColor = { 226, 220, 202, 255 };
-static const rgb_color kHatchColor = { 196, 188, 166, 255 };
+static const rgb_color kWeekendColor = { 230, 224, 206, 255 };
 static const rgb_color kDayNumberColor = { 160, 154, 134, 255 };
 static const rgb_color kMonthStartColor = { 200, 40, 40, 255 };
-
-// diagonal hatching for the cells before the 1st and after the last day
-static const pattern kHatch = { { 0x88, 0x44, 0x22, 0x11,
-	0x88, 0x44, 0x22, 0x11 } };
 
 
 static rgb_color
@@ -159,9 +153,6 @@ public:
 		for (int month = 1; month <= 12; month++) {
 			BRect row = _ColumnRect(month, 0)
 				| _ColumnRect(month, kColumns - 1);
-			rgb_color paper = month % 2 == 0 ? kAltRowColor : kPaperColor;
-			SetHighColor(paper);
-			FillRect(row);
 
 			SetFont(&bold);
 			SetLowColor(kPaperColor);
@@ -175,27 +166,26 @@ public:
 			for (int column = 0; column < kColumns; column++) {
 				BRect cell = _ColumnRect(month, column);
 				int day = column - offset + 1;
-				if (day < 1 || day > days) {
-					SetHighColor(kHatchColor);
-					SetLowColor(kWeekendColor);
-					FillRect(cell, kHatch);
-				} else {
-					rgb_color background = paper;
-					if (column % 7 >= 5) {
-						background = kWeekendColor;
-						SetHighColor(background);
-						FillRect(cell);
-					}
-					if (showNumbers) {
-						// top right, clear of the red corner on the 1st
-						BString number;
-						number << day;
-						SetLowColor(background);
-						SetHighColor(kDayNumberColor);
-						DrawString(number.String(), BPoint(
-							cell.right - 2 - tiny.StringWidth(number.String()),
-							cell.top + tinyHeight.ascent + 1));
-					}
+				// Days outside the month are left as blank paper, so each
+				// month reads as a strip starting under its 1st.
+				if (day < 1 || day > days)
+					continue;
+
+				rgb_color background = kPaperColor;
+				if (column % 7 >= 5) {
+					background = kWeekendColor;
+					SetHighColor(background);
+					FillRect(cell);
+				}
+				if (showNumbers) {
+					// top right, clear of the red corner on the 1st
+					BString number;
+					number << day;
+					SetLowColor(background);
+					SetHighColor(kDayNumberColor);
+					DrawString(number.String(), BPoint(
+						cell.right - 2 - tiny.StringWidth(number.String()),
+						cell.top + tinyHeight.ascent + 1));
 				}
 				SetHighColor(kRuleColor);
 				StrokeRect(cell);
