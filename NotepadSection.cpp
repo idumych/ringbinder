@@ -207,6 +207,9 @@ void
 NotepadSection::NewEntry()
 {
 	Commit();
+	// Clear the editor first: Reload() commits the editor's text to
+	// fCurrentId, which would copy the previous page into the new one.
+	_LoadPage(-1);
 
 	BMessage record;
 	SetString(record, "title", "Untitled page");
