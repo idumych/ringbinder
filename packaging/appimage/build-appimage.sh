@@ -9,7 +9,8 @@
 # release packages (.deb, extracted, not installed) into .cosmoe/stage-deb/,
 # so only Ringbinder is compiled. Those packages are built for Ubuntu 26.04,
 # so the AppImage needs that glibc (2.43) or newer. For an AppImage that runs
-# on older distros, build Cosmoe from source on Ubuntu 24.04 instead:
+# on older distros, build Cosmoe from source on Ubuntu 24.04 instead (this takes
+# about 20 minutes and is not what the CI workflow does):
 #
 #   COSMOE_FROM_SOURCE=1 sh packaging/appimage/build-appimage.sh
 #
@@ -34,11 +35,13 @@ APPIMAGETOOL_TAG=1.9.1
 ARCH=x86_64
 
 WORK="$ROOT/.cosmoe"
-. /etc/os-release 2>/dev/null || :
-if [ "${ID:-}" != ubuntu ]; then
-	echo "Note: building on ${PRETTY_NAME:-this system}, not Ubuntu 24.04. The AppImage" >&2
-	echo "will run here, but it needs this system's newer glibc and CPU baseline, so" >&2
-	echo "build the one you release on Ubuntu 24.04 (CI)." >&2
+if [ -n "${COSMOE_FROM_SOURCE:-}" ]; then
+	. /etc/os-release 2>/dev/null || :
+	if [ "${ID:-}" != ubuntu ]; then
+		echo "Note: building Cosmoe on ${PRETTY_NAME:-this system}, not Ubuntu 24.04. The AppImage" >&2
+		echo "will run here, but it needs this system's newer glibc and CPU baseline, so" >&2
+		echo "build the one you release on Ubuntu 24.04." >&2
+	fi
 fi
 OUT="$ROOT/Ringbinder-${VERSION}-${ARCH}.AppImage"
 mkdir -p "$WORK/tools"

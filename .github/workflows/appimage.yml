@@ -1,8 +1,10 @@
 name: appimage
 
-# Ringbinder for any x86_64 Linux desktop, built with Cosmoe from source on
-# Ubuntu 24.04 so the AppImage runs on that glibc (2.38) or newer. Run it by
-# hand, or push a v* tag to attach the AppImage to that release.
+# Ringbinder for x86_64 Linux desktops, as an AppImage, built against
+# Cosmoe's prebuilt release packages. Those are built for Ubuntu 26.04, so
+# this builds in an Ubuntu 26.04 container and the AppImage needs glibc 2.43
+# or newer. Run it by hand, or push a v* tag to attach the AppImage to that
+# release.
 on:
   workflow_dispatch:
   push:
@@ -13,36 +15,29 @@ permissions:
 
 jobs:
   appimage:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
+    container: ubuntu:26.04
     steps:
+      - name: Install build tools
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends \
+            build-essential ca-certificates curl file git zstd xz-utils \
+            libcurl4-openssl-dev desktop-file-utils
+
       - uses: actions/checkout@v4
 
-      - name: Install build dependencies
+      - name: Install Cosmoe's packages (for their dependencies)
         run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            build-essential meson ninja-build pkg-config flex bison curl file \
-            libcairo2-dev libpng-dev libjpeg-dev libwebp-dev libtiff-dev \
-            zlib1g-dev libicu-dev libpango1.0-dev libicns-dev libraw-dev \
-            libpixman-1-dev libfontconfig1-dev libglib2.0-dev \
-            libx11-dev libx11-xcb-dev libxcursor-dev libxrandr-dev \
-            libxkbcommon-dev libxkbcommon-x11-dev libwayland-dev \
-            wayland-protocols libfuse3-dev desktop-file-utils \
-            libcurl4-openssl-dev
-
-      - name: Cosmoe version
-        id: cosmoe
-        run: echo "tag=$(sed -n 's/^COSMOE_TAG=//p' packaging/appimage/build-appimage.sh)" >> "$GITHUB_OUTPUT"
-
-      - name: Cache Cosmoe build
-        uses: actions/cache@v4
-        with:
-          path: .cosmoe/stage
-          key: cosmoe-${{ steps.cosmoe.outputs.tag }}-ubuntu-24.04-release
+          tag=$(sed -n 's/^COSMOE_TAG=//p' packaging/appimage/build-appimage.sh)
+          ver="${tag#v}"; ver="${ver%_*}-1.${ver#*_}"
+          for pkg in cosmoe cosmoe-dev; do
+            curl -fsSLO "https://github.com/haydentech/cosmoe/releases/download/$tag/${pkg}_${ver}_amd64.deb"
+          done
+          apt-get install -y ./cosmoe_*.deb ./cosmoe-dev_*.deb
+          rm -f ./*.deb
 
       - name: Build AppImage
-        env:
-          COSMOE_FROM_SOURCE: '1'
         run: sh packaging/appimage/build-appimage.sh
 
       - uses: actions/upload-artifact@v4
@@ -50,10 +45,18 @@ jobs:
           name: Ringbinder-AppImage
           path: Ringbinder-*.AppImage
 
+  attach:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: appimage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: Ringbinder-AppImage
       - name: Attach to release
-        if: startsWith(github.ref, 'refs/tags/v')
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
         # Keep an AppImage that is already attached (the tested build that
         # SHA256SUMS describes); only add one if the release has none.
         run: |
