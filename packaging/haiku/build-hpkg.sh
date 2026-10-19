@@ -11,7 +11,7 @@ set -eu
 cd "$(dirname "$0")/../.."
 ROOT=$(pwd)
 
-VERSION=1.0.0
+VERSION=1.0.1
 REVISION=1
 ARCH=$(getarch)
 PACKAGER="${PACKAGER:-idumych <19998719+idumych@users.noreply.github.com>}"
