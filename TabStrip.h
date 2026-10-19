@@ -35,4 +35,19 @@ private:
 			int32			fSelected;
 };
 
+
+// The left margin of a single-page section, with punched holes and the
+// binder's metal rings, as on the year planner page of a paper organizer.
+// (The Calendar's two-page spread has its rings down the middle instead.)
+class RingMargin : public BView {
+public:
+							RingMargin();
+
+			void			SetSection(int32 index);
+	virtual	void			Draw(BRect updateRect);
+
+private:
+			int32			fSection;
+};
+
 #endif // TAB_STRIP_H

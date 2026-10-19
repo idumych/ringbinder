@@ -197,3 +197,72 @@ TabStrip::MouseDown(BPoint where)
 		return;
 	}
 }
+
+
+// #pragma mark - RingMargin
+
+
+static const float kRingMarginWidth = 40;
+static const float kHeaderHeight = 40;	// see SectionHeader
+static const int kRingCount = 6;		// as on the Calendar
+
+
+RingMargin::RingMargin()
+	:
+	BView("rings", B_WILL_DRAW | B_FULL_UPDATE_ON_RESIZE),
+	fSection(0)
+{
+	SetViewColor(B_TRANSPARENT_COLOR);
+	SetExplicitMinSize(BSize(kRingMarginWidth, B_SIZE_UNSET));
+	SetExplicitMaxSize(BSize(kRingMarginWidth, B_SIZE_UNLIMITED));
+}
+
+
+void
+RingMargin::SetSection(int32 index)
+{
+	fSection = index;
+	Invalidate();
+}
+
+
+void
+RingMargin::Draw(BRect updateRect)
+{
+	BRect bounds = Bounds();
+	SetHighColor(kPaperColor);
+	FillRect(bounds);
+
+	// carry on the coloured rule under the section header
+	SetHighColor(kSectionColors[fSection]);
+	FillRect(BRect(bounds.left, kHeaderHeight - 4, bounds.right,
+		kHeaderHeight - 1));
+
+	float holeX = bounds.left + 27;
+	for (int i = 0; i < kRingCount; i++) {
+		float y = floorf(bounds.top + (i + 0.5f) * bounds.Height()
+			/ kRingCount);
+
+		// punched hole, with the cover showing through
+		BRect hole(holeX - 7, y - 7, holeX + 7, y + 7);
+		SetHighColor(Shade(kPaperShade, 0.8f));
+		FillEllipse(hole.OffsetByCopy(1, 1));
+		SetHighColor(Shade(kBinderColor, 0.8f));
+		FillEllipse(hole);
+
+		// The ring comes out from under the page edge and into the hole,
+		// drawn like the Calendar's rings.
+		BRect ring(bounds.left - 8, y - 6, holeX + 2, y + 6);
+		SetHighColor(120, 120, 128);
+		FillRoundRect(ring.OffsetByCopy(0, 2), 6, 6);
+		SetHighColor(205, 205, 215);
+		FillRoundRect(ring, 6, 6);
+		SetHighColor(250, 250, 255);
+		StrokeLine(BPoint(ring.left + 6, ring.top + 2),
+			BPoint(ring.right - 6, ring.top + 2));
+	}
+
+	// the page edge
+	SetHighColor(Shade(kPaperShade, 0.9f));
+	StrokeLine(bounds.LeftTop(), bounds.LeftBottom());
+}

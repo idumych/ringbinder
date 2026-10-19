@@ -16,6 +16,7 @@ class BMenuItem;
 class BMessageRunner;
 class GoogleSync;
 class DataStore;
+class RingMargin;
 class Section;
 class TabStrip;
 
@@ -45,6 +46,7 @@ private:
 			DataStore*		fStore;
 			BCardView*		fCards;
 			TabStrip*		fLeftTabs;
+			RingMargin*		fRings;
 			TabStrip*		fRightTabs;
 			Section*		fSections[SECTION_COUNT];
 			int32			fCurrent;
