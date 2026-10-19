@@ -9,6 +9,7 @@
 
 #include <time.h>
 
+#include "AnniversarySection.h"
 #include "CalendarSection.h"
 #include "DateUtil.h"
 #include "NotepadSection.h"
@@ -32,20 +33,20 @@ static const FieldSpec kTodoFields[] = {
 	{ "notes",		"Notes",		FIELD_MULTILINE, NULL, false }
 };
 
+// The list fills the left-hand page; the card on the right shows the rest.
 static const ColumnSpec kTodoColumns[] = {
-	{ "done",		"",			26,		COL_CHECK },
-	{ "priority",	"Priority",	90,		COL_TEXT },
-	{ "title",		"Task",		260,	COL_TEXT },
-	{ "due",		"Due",		110,	COL_DATE },
-	{ "category",	"Category",	100,	COL_TEXT },
-	{ "notes",		"Notes",	0,		COL_TEXT }
+	{ "done",		"",			24,		COL_CHECK },
+	{ "priority",	"Pri",		34,		COL_SHORT },
+	{ "title",		"Task",		0,		COL_TEXT },
+	{ "due",		"Due",		96,		COL_DATE }
 };
 
 static const ListConfig kTodoConfig = {
 	kTodoFields, COUNT_OF(kTodoFields),
 	kTodoColumns, COUNT_OF(kTodoColumns),
 	{ "priority", "due", "title", NULL },
-	false, "done", NULL, "Task", "title", NULL
+	false, "done", NULL, "Task", "title", NULL,
+	INDEX_TODO, { "title", NULL, NULL }
 };
 
 
@@ -66,19 +67,17 @@ static const FieldSpec kAddressFields[] = {
 };
 
 static const ColumnSpec kAddressColumns[] = {
-	{ "last",		"Last name",	130,	COL_TEXT },
+	{ "last",		"Last name",	0,		COL_TEXT },
 	{ "first",		"First name",	110,	COL_TEXT },
-	{ "company",	"Company",		150,	COL_TEXT },
-	{ "phone",		"Phone",		120,	COL_TEXT },
-	{ "mobile",		"Mobile",		120,	COL_TEXT },
-	{ "email",		"E-mail",		0,		COL_TEXT }
+	{ "phone",		"Phone",		110,	COL_TEXT }
 };
 
 static const ListConfig kAddressConfig = {
 	kAddressFields, COUNT_OF(kAddressFields),
 	kAddressColumns, COUNT_OF(kAddressColumns),
 	{ "last", "first", "company", NULL },
-	false, NULL, "last", "Contact", "last", NULL
+	false, NULL, "last", "Contact", "last", NULL,
+	INDEX_LETTERS, { "first", "last", NULL }
 };
 
 
@@ -109,47 +108,19 @@ static const FieldSpec kCallFields[] = {
 };
 
 static const ColumnSpec kCallColumns[] = {
-	{ "done",		"",			26,		COL_CHECK },
-	{ "date",		"Date",		105,	COL_DATE },
-	{ "time",		"Time",		55,		COL_TEXT },
-	{ "direction",	"Type",		85,		COL_TEXT },
-	{ "name",		"Name",		160,	COL_TEXT },
-	{ "phone",		"Phone",	120,	COL_TEXT },
-	{ "notes",		"Notes",	0,		COL_TEXT }
+	{ "done",		"",			24,		COL_CHECK },
+	{ "date",		"Date",		96,		COL_DATE },
+	{ "time",		"Time",		50,		COL_TEXT },
+	{ "name",		"Name",		0,		COL_TEXT },
+	{ "direction",	"Type",		76,		COL_TEXT }
 };
 
 static const ListConfig kCallConfig = {
 	kCallFields, COUNT_OF(kCallFields),
 	kCallColumns, COUNT_OF(kCallColumns),
 	{ "date", "time", "name", NULL },
-	false, "done", NULL, "Call", "name", CallDefaults
-};
-
-
-// #pragma mark - Anniversary
-
-
-static const FieldSpec kAnniversaryFields[] = {
-	{ "title",		"Occasion",		FIELD_TEXT,		NULL, true },
-	{ "date",		"Date",			FIELD_DATE,		NULL, true },
-	{ "category",	"Category",		FIELD_CHOICE,
-		"Birthday|Anniversary|Holiday|Other", false },
-	{ "notes",		"Notes",		FIELD_MULTILINE, NULL, false }
-};
-
-static const ColumnSpec kAnniversaryColumns[] = {
-	{ "date",		"Date",		130,	COL_MONTHDAY },
-	{ "title",		"Occasion",	260,	COL_TEXT },
-	{ "category",	"Category",	110,	COL_TEXT },
-	{ "date",		"Next",		100,	COL_COUNTDOWN },
-	{ "notes",		"Notes",	0,		COL_TEXT }
-};
-
-static const ListConfig kAnniversaryConfig = {
-	kAnniversaryFields, COUNT_OF(kAnniversaryFields),
-	kAnniversaryColumns, COUNT_OF(kAnniversaryColumns),
-	{ "title", NULL, NULL, NULL },
-	true, NULL, NULL, "Occasion", "title", NULL
+	false, "done", NULL, "Call", "name", CallDefaults,
+	INDEX_NONE, { "name", NULL, NULL }
 };
 
 
@@ -174,6 +145,6 @@ CreateSection(int32 index, DataStore* store)
 			return new NotepadSection(index, store);
 		case SECTION_ANNIVERSARY:
 		default:
-			return new RecordListSection(index, store, kAnniversaryConfig);
+			return new AnniversarySection(index, store);
 	}
 }

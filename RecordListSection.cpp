@@ -18,8 +18,11 @@
 
 #include <algorithm>
 #include <ctype.h>
+#include <string.h>
+#include <vector>
 
 #include "DateUtil.h"
+#include "Spread.h"
 
 static const float kColumnInset = 8.0f;
 
@@ -28,8 +31,15 @@ static float
 ColumnWidth(const ListConfig* config, int32 index, float x, float right)
 {
 	float width = config->columns[index].width;
-	if (width <= 0 || index == config->columnCount - 1)
-		width = std::max(right - x, 10.0f);
+	if (index == config->columnCount - 1)
+		return std::max(right - x, 10.0f);
+	if (width <= 0) {
+		// whatever the columns after this one leave
+		float rest = 0;
+		for (int32 i = index + 1; i < config->columnCount; i++)
+			rest += config->columns[i].width;
+		width = std::max(right - x - rest, 10.0f);
+	}
 	return width;
 }
 
@@ -131,6 +141,14 @@ private:
 				return text;
 			}
 
+			case COL_SHORT:
+			{
+				int32 dash = value.FindFirst(" - ");
+				if (dash > 0)
+					value.Truncate(dash);
+				return value;
+			}
+
 			default:
 				value.ReplaceAll('\n', ' ');
 				return value;
@@ -188,20 +206,25 @@ private:
 };
 
 
-// #pragma mark - LetterBar
+// #pragma mark - IndexTabs
 
 
-class LetterBar : public BView {
+// Index tabs down the outer edge of the left-hand page, like the A-Z
+// thumb tabs of a paper address book.
+class IndexTabs : public BView {
 public:
-	LetterBar(BHandler* target)
+	IndexTabs(BHandler* target, int32 section,
+		const std::vector<BString>& labels)
 		:
-		BView("letters", B_WILL_DRAW | B_FULL_UPDATE_ON_RESIZE),
+		BView("indexTabs", B_WILL_DRAW | B_FULL_UPDATE_ON_RESIZE),
 		fTarget(target),
+		fSection(section),
+		fLabels(labels),
 		fSelected(0)
 	{
 		SetViewColor(B_TRANSPARENT_COLOR);
-		SetExplicitMinSize(BSize(300, 24));
-		SetExplicitMaxSize(BSize(B_SIZE_UNLIMITED, 24));
+		SetExplicitMinSize(BSize(26, labels.size() * 14));
+		SetExplicitMaxSize(BSize(26, B_SIZE_UNLIMITED));
 	}
 
 	virtual void Draw(BRect updateRect)
@@ -211,64 +234,315 @@ public:
 		FillRect(bounds);
 
 		BFont font(be_bold_font);
-		font.SetSize(11);
-		SetFont(&font);
+		font.SetSize(10);
+		font_height fh;
+		font.GetHeight(&fh);
 
-		for (int32 i = 0; i < 27; i++) {
-			BRect cell = _CellRect(i);
+		for (int32 i = 0; i < (int32)fLabels.size(); i++) {
+			BRect tab = _TabRect(i);
 			bool selected = i == fSelected;
 			rgb_color fill = selected
-				? kSectionColors[SECTION_ADDRESS] : kPaperShade;
+				? kSectionColors[fSection] : kPaperShade;
+			SetHighColor(tint_color(fill, B_DARKEN_1_TINT));
+			FillRoundRect(tab.OffsetByCopy(-1, 1), 4, 4);
 			SetHighColor(fill);
-			FillRoundRect(cell.InsetByCopy(1, 2), 3, 3);
-			SetLowColor(fill);
-			SetHighColor(kInkColor);
+			FillRoundRect(tab, 4, 4);
+			// square on the page side
+			FillRect(BRect(tab.right - 4, tab.top, tab.right, tab.bottom));
 
-			BString label = _Label(i);
-			float width = StringWidth(label.String());
-			DrawString(label.String(), BPoint(
-				cell.left + (cell.Width() - width) / 2, cell.bottom - 7));
+			BString label = fLabels[i];
+			BFont labelFont(font);
+			float width = labelFont.StringWidth(label.String());
+			BPoint start;
+			if (width <= tab.Width() - 4) {
+				start = BPoint(tab.left + (tab.Width() - width) / 2,
+					tab.top + (tab.Height() + fh.ascent - fh.descent) / 2);
+			} else {
+				// longer labels run up the tab
+				labelFont.SetRotation(90);
+				labelFont.TruncateString(&label, B_TRUNCATE_END,
+					tab.Height() - 6);
+				width = labelFont.StringWidth(label.String());
+				start = BPoint(
+					tab.left + (tab.Width() + fh.ascent - fh.descent) / 2,
+					tab.top + (tab.Height() + width) / 2);
+			}
+			SetFont(&labelFont);
+			SetHighColor(kInkColor);
+			SetDrawingMode(B_OP_OVER);
+			DrawString(label.String(), start);
+			SetDrawingMode(B_OP_COPY);
 		}
 	}
 
 	virtual void MouseDown(BPoint where)
 	{
-		for (int32 i = 0; i < 27; i++) {
-			if (!_CellRect(i).Contains(where))
+		for (int32 i = 0; i < (int32)fLabels.size(); i++) {
+			if (!_TabRect(i).Contains(where))
 				continue;
 			fSelected = i;
 			Invalidate();
 			BMessage message(MSG_LETTER);
-			message.AddString("letter",
-				i == 0 ? "" : _Label(i).String());
+			message.AddInt32("tab", i);
 			BMessenger(fTarget).SendMessage(&message);
 			return;
 		}
 	}
 
 private:
-	BRect _CellRect(int32 index) const
+	BRect _TabRect(int32 index) const
 	{
-		// "All" is twice as wide as the letters
-		BRect bounds = Bounds().InsetByCopy(8, 0);
-		float unit = bounds.Width() / 28;
-		float left = index == 0 ? bounds.left
-			: bounds.left + (index + 1) * unit;
-		float width = index == 0 ? unit * 2 : unit;
-		return BRect(left, bounds.top, left + width - 1, bounds.bottom);
+		BRect bounds = Bounds();
+		float height = floorf(bounds.Height() / fLabels.size());
+		float top = bounds.top + index * height;
+		return BRect(bounds.left + 2, top + 1, bounds.right,
+			top + height - 1);
 	}
 
-	BString _Label(int32 index) const
+	BHandler*				fTarget;
+	int32					fSection;
+	std::vector<BString>	fLabels;
+	int32					fSelected;
+};
+
+
+// #pragma mark - DetailCard
+
+
+// The selected entry, written out on a record card on the right-hand page.
+class DetailCard : public BView {
+public:
+	DetailCard(BHandler* target, const ListConfig* config)
+		:
+		BView("card", B_WILL_DRAW | B_FULL_UPDATE_ON_RESIZE),
+		fTarget(target),
+		fConfig(config),
+		fHasRecord(false)
 	{
-		if (index == 0)
-			return BString("All");
-		BString letter;
-		letter << (char)('A' + index - 1);
-		return letter;
+		SetViewColor(B_TRANSPARENT_COLOR);
+		SetExplicitMinSize(BSize(220, 200));
 	}
 
-	BHandler*	fTarget;
-	int32		fSelected;
+	void SetRecord(const BMessage* record, const char* emptyText)
+	{
+		fHasRecord = record != NULL;
+		if (record != NULL)
+			fRecord = *record;
+		fEmptyText = emptyText;
+		Invalidate();
+	}
+
+	virtual void Draw(BRect updateRect)
+	{
+		BRect bounds = Bounds();
+		SetHighColor(kPaperColor);
+		FillRect(bounds);
+
+		BFont plain(be_plain_font);
+		plain.SetSize(12);
+		if (!fHasRecord) {
+			SetFont(&plain);
+			SetLowColor(kPaperColor);
+			SetHighColor(150, 146, 130);
+			std::vector<BString> lines;
+			_Wrap(fEmptyText, plain, bounds.Width() - 60, lines);
+			float y = floorf(bounds.top + bounds.Height() / 3);
+			for (size_t i = 0; i < lines.size(); i++) {
+				float width = plain.StringWidth(lines[i].String());
+				DrawString(lines[i].String(), BPoint(
+					floorf(bounds.left + (bounds.Width() - width) / 2), y));
+				y += 18;
+			}
+			return;
+		}
+
+		BRect card = bounds.InsetByCopy(18, 16);
+		BFont bold(be_bold_font);
+		bold.SetSize(17);
+		BFont label(be_plain_font);
+		label.SetSize(10);
+		font_height plainHeight, boldHeight, labelHeight;
+		plain.GetHeight(&plainHeight);
+		bold.GetHeight(&boldHeight);
+		label.GetHeight(&labelHeight);
+		float textWidth = card.Width() - 28;
+
+		// Lay the card out first, so its border fits the text.
+		std::vector<Row> rows;
+		float height = 18 + boldHeight.ascent + 14;
+		for (int32 i = 0; i < fConfig->fieldCount; i++) {
+			const FieldSpec& field = fConfig->fields[i];
+			if (_IsTitleKey(field.key))
+				continue;
+			BString value = _Value(field);
+			if (value.IsEmpty())
+				continue;
+			Row row;
+			row.label = field.label;
+			_Wrap(value, plain, textWidth, row.lines);
+			rows.push_back(row);
+			height += labelHeight.ascent + 4
+				+ row.lines.size() * (plainHeight.ascent
+					+ plainHeight.descent + 3) + 8;
+		}
+		card.bottom = std::min(card.bottom, card.top + height + 8);
+
+		// the card, with a soft shadow and a coloured top edge
+		SetHighColor(kPaperShade);
+		FillRect(card.OffsetByCopy(3, 3));
+		SetHighColor(255, 255, 250);
+		FillRect(card);
+		SetHighColor(kSectionColors[_Section()]);
+		FillRect(BRect(card.left, card.top, card.right, card.top + 4));
+		SetHighColor(tint_color(kPaperShade, B_DARKEN_1_TINT));
+		StrokeRect(card);
+
+		float x = card.left + 14;
+		float y = card.top + 18 + boldHeight.ascent;
+		SetLowColor(255, 255, 250);
+		SetFont(&bold);
+		SetHighColor(kInkColor);
+		BString title = _Title();
+		bold.TruncateString(&title, B_TRUNCATE_END, textWidth);
+		DrawString(title.String(), BPoint(x, y));
+		y += 14;
+
+		for (size_t i = 0; i < rows.size() && y < card.bottom; i++) {
+			y += labelHeight.ascent + 4;
+			SetFont(&label);
+			SetHighColor(140, 136, 120);
+			BString text(rows[i].label);
+			text.ToUpper();
+			DrawString(text.String(), BPoint(x, y));
+			SetFont(&plain);
+			SetHighColor(kInkColor);
+			for (size_t j = 0; j < rows[i].lines.size(); j++) {
+				y += plainHeight.ascent + plainHeight.descent + 3;
+				DrawString(rows[i].lines[j].String(), BPoint(x, y));
+			}
+			y += 8;
+		}
+
+		SetFont(&label);
+		SetLowColor(kPaperColor);
+		SetHighColor(170, 166, 150);
+		const char* hint = "Double-click the card to edit";
+		DrawString(hint, BPoint(
+			bounds.right - 18 - label.StringWidth(hint), bounds.bottom - 8));
+	}
+
+	virtual void MouseDown(BPoint where)
+	{
+		int32 clicks = 1;
+		if (Window()->CurrentMessage() != NULL)
+			Window()->CurrentMessage()->FindInt32("clicks", &clicks);
+		if (fHasRecord && clicks >= 2)
+			BMessenger(fTarget).SendMessage(MSG_EDIT_ENTRY);
+	}
+
+private:
+	struct Row {
+		const char*				label;
+		std::vector<BString>	lines;
+	};
+
+	int32 _Section() const
+	{
+		Section* section = dynamic_cast<Section*>(fTarget);
+		return section != NULL ? section->Index() : 0;
+	}
+
+	bool _IsTitleKey(const char* key) const
+	{
+		for (int i = 0; i < 3 && fConfig->cardTitleKeys[i] != NULL; i++) {
+			if (strcmp(key, fConfig->cardTitleKeys[i]) == 0)
+				return true;
+		}
+		return false;
+	}
+
+	BString _Title() const
+	{
+		BString title;
+		for (int i = 0; i < 3 && fConfig->cardTitleKeys[i] != NULL; i++) {
+			BString part = GetString(fRecord, fConfig->cardTitleKeys[i]);
+			if (part.IsEmpty())
+				continue;
+			if (!title.IsEmpty())
+				title << " ";
+			title << part;
+		}
+		if (title.IsEmpty())
+			title = GetString(fRecord, "company");
+		if (title.IsEmpty())
+			title << "(untitled " << fConfig->singular << ")";
+		return title;
+	}
+
+	BString _Value(const FieldSpec& field) const
+	{
+		BString value = GetString(fRecord, field.key);
+		SimpleDate date;
+		switch (field.type) {
+			case FIELD_CHECK:
+				return GetBool(fRecord, field.key)
+					? BString("\xE2\x9C\x93 Yes") : BString();
+			case FIELD_DATE:
+				if (ParseDate(value.String(), date))
+					return FormatLong(date);
+				return value;
+			default:
+				return value;
+		}
+	}
+
+	static void _Wrap(const BString& text, const BFont& font, float width,
+		std::vector<BString>& lines)
+	{
+		BString rest(text);
+		while (true) {
+			BString paragraph;
+			int32 newline = rest.FindFirst('\n');
+			if (newline < 0) {
+				paragraph = rest;
+				rest = "";
+			} else {
+				rest.CopyInto(paragraph, 0, newline);
+				rest.Remove(0, newline + 1);
+			}
+
+			BString line;
+			int32 start = 0;
+			while (start <= paragraph.Length()) {
+				int32 space = paragraph.FindFirst(' ', start);
+				int32 end = space < 0 ? paragraph.Length() : space;
+				BString word;
+				paragraph.CopyInto(word, start, end - start);
+				BString candidate(line);
+				if (!candidate.IsEmpty())
+					candidate << " ";
+				candidate << word;
+				if (!line.IsEmpty()
+					&& font.StringWidth(candidate.String()) > width) {
+					lines.push_back(line);
+					line = word;
+				} else
+					line = candidate;
+				if (space < 0)
+					break;
+				start = space + 1;
+			}
+			lines.push_back(line);
+			if (newline < 0)
+				break;
+		}
+	}
+
+	BHandler*			fTarget;
+	const ListConfig*	fConfig;
+	BMessage			fRecord;
+	bool				fHasRecord;
+	BString				fEmptyText;
 };
 
 
@@ -318,12 +592,23 @@ struct RecordLess {
 // #pragma mark - RecordListSection
 
 
+static const char* kTodoTabs[] = {
+	"All", "Overdue", "Current", "Future", "Completed"
+};
+static const int32 kTodoTabCount = 5;
+
+// To Do tabs: a task is current until a week before it is due
+static const int kFutureDays = 7;
+
+
 RecordListSection::RecordListSection(int32 index, DataStore* store,
 	const ListConfig& config)
 	:
 	Section(kSectionNames[index], index, store),
 	fConfig(config),
-	fLetterBar(NULL)
+	fTabs(NULL),
+	fTab(0),
+	fVisible(0)
 {
 	BGroupView* toolbar = new BGroupView(B_HORIZONTAL, 6);
 	toolbar->SetViewColor(kPaperColor);
@@ -344,17 +629,41 @@ RecordListSection::RecordListSection(int32 index, DataStore* store,
 	fList = new BListView("list", B_SINGLE_SELECTION_LIST);
 	fList->SetViewColor(kPaperColor);
 	fList->SetLowColor(kPaperColor);
+	fList->SetSelectionMessage(new BMessage(MSG_LIST_SELECTION));
 	fList->SetInvocationMessage(new BMessage(MSG_EDIT_ENTRY));
 	BScrollView* scroll = new BScrollView("scroll", fList, 0, false, true,
 		B_NO_BORDER);
 
-	BLayoutBuilder::Group<> builder(this, B_VERTICAL, 0);
-	builder.Add(new SectionHeader(index)).Add(toolbar);
-	if (config.letterKey != NULL) {
-		fLetterBar = new LetterBar(this);
-		builder.Add(fLetterBar);
+	std::vector<BString> labels;
+	if (config.index == INDEX_LETTERS) {
+		labels.push_back("All");
+		for (char letter = 'A'; letter <= 'Z'; letter++)
+			labels.push_back(BString() << letter);
+	} else if (config.index == INDEX_TODO) {
+		for (int32 i = 0; i < kTodoTabCount; i++)
+			labels.push_back(kTodoTabs[i]);
 	}
-	builder.Add(new ListHeader(&fConfig)).Add(scroll);
+
+	fCard = new DetailCard(this, &fConfig);
+
+	SpreadView* spread = new SpreadView();
+	BGroupLayout* left = new BGroupLayout(B_HORIZONTAL, 0);
+	spread->LeftPage()->GroupLayout()->AddItem(left);
+	if (!labels.empty()) {
+		fTabs = new IndexTabs(this, index, labels);
+		left->AddView(fTabs);
+	}
+	BLayoutBuilder::Group<>(left)
+		.AddGroup(B_VERTICAL, 0)
+			.Add(new ListHeader(&fConfig))
+			.Add(scroll)
+		.End();
+	spread->RightPage()->GroupLayout()->AddView(fCard);
+
+	BLayoutBuilder::Group<>(this, B_VERTICAL, 0)
+		.Add(new SectionHeader(index))
+		.Add(toolbar)
+		.Add(spread);
 
 	Reload();
 }
@@ -366,13 +675,16 @@ RecordListSection::MessageReceived(BMessage* message)
 	switch (message->what) {
 		case MSG_LETTER:
 		{
-			const char* letter;
-			if (message->FindString("letter", &letter) == B_OK) {
-				fLetter = letter;
+			int32 tab;
+			if (message->FindInt32("tab", &tab) == B_OK) {
+				fTab = tab;
 				Reload();
 			}
 			break;
 		}
+		case MSG_LIST_SELECTION:
+			_UpdateCard();
+			break;
 		default:
 			Section::MessageReceived(message);
 			break;
@@ -400,6 +712,7 @@ RecordListSection::Reload()
 	}
 	RecordLess less = { &fConfig };
 	std::sort(visible.begin(), visible.end(), less);
+	fVisible = visible.size();
 
 	int32 selectIndex = -1;
 	for (size_t i = 0; i < visible.size(); i++) {
@@ -407,11 +720,14 @@ RecordListSection::Reload()
 		if (GetId(*visible[i]) == selectedId)
 			selectIndex = i;
 	}
+	// keep a card on the right-hand page whenever there is something
+	if (selectIndex < 0 && !visible.empty())
+		selectIndex = 0;
 	if (selectIndex >= 0)
 		fList->Select(selectIndex);
 
 	BString count;
-	if (fLetter.IsEmpty()) {
+	if (fTab == 0) {
 		count.SetToFormat("%d %s%s", (int)records.size(),
 			fConfig.singular, records.size() == 1 ? "" : "s");
 	} else {
@@ -420,19 +736,63 @@ RecordListSection::Reload()
 	}
 	count.ToLower();
 	fCount->SetText(count.String());
+
+	_UpdateCard();
+}
+
+
+void
+RecordListSection::_UpdateCard()
+{
+	BString empty;
+	BString singular(fConfig.singular);
+	singular.ToLower();
+	if (fStore->Records(Key()).empty()) {
+		empty.SetToFormat("No %ss yet.\nClick \"New %s\" to add one.",
+			singular.String(), fConfig.singular);
+	} else if (fVisible == 0)
+		empty.SetToFormat("No %ss behind this tab.", singular.String());
+	else
+		empty.SetToFormat("Select a %s to see it here.", singular.String());
+	fCard->SetRecord(_SelectedRecord(), empty.String());
 }
 
 
 bool
 RecordListSection::_Matches(const BMessage& record) const
 {
-	if (fConfig.letterKey == NULL || fLetter.IsEmpty())
+	if (fTab == 0)
 		return true;
-	BString value = GetString(record, fConfig.letterKey);
-	if (value.IsEmpty())
-		value = GetString(record, "company");
-	return !value.IsEmpty()
-		&& toupper((unsigned char)value[0]) == fLetter[0];
+
+	if (fConfig.index == INDEX_LETTERS) {
+		BString value = GetString(record, fConfig.letterKey);
+		if (value.IsEmpty())
+			value = GetString(record, "company");
+		return !value.IsEmpty()
+			&& toupper((unsigned char)value[0]) == 'A' + fTab - 1;
+	}
+
+	if (fConfig.index == INDEX_TODO) {
+		bool done = GetBool(record, fConfig.doneKey);
+		if (fTab == 4)
+			return done;
+		if (done)
+			return false;
+		SimpleDate due;
+		bool hasDue = ParseDate(GetString(record, "due").String(), due);
+		long today = DayNumber(Today());
+		bool overdue = hasDue && DayNumber(due) < today;
+		bool future = hasDue && DayNumber(due) > today + kFutureDays;
+		switch (fTab) {
+			case 1:
+				return overdue;
+			case 2:
+				return !overdue && !future;
+			case 3:
+				return future;
+		}
+	}
+	return true;
 }
 
 

@@ -16,6 +16,8 @@
 #include <algorithm>
 #include <vector>
 
+#include "Spread.h"
+
 
 class NoteItem : public BStringItem {
 public:
@@ -63,24 +65,31 @@ NotepadSection::NotepadSection(int32 index, DataStore* store)
 	BStringView* contents = new BStringView("contents", "Contents");
 	BFont font(be_bold_font);
 	contents->SetFont(&font);
+	contents->SetExplicitMaxSize(BSize(B_SIZE_UNLIMITED, B_SIZE_UNSET));
+
+	// Contents on the left-hand page, the open page on the right
+	SpreadView* spread = new SpreadView();
+	// (Build into the pages' own layouts; replacing them would detach
+	// the pages from the spread.)
+	spread->LeftPage()->GroupLayout()->SetSpacing(B_USE_SMALL_SPACING);
+	spread->RightPage()->GroupLayout()->SetSpacing(B_USE_SMALL_SPACING);
+	BLayoutBuilder::Group<>(spread->LeftPage()->GroupLayout())
+		.SetInsets(12, 10, 24, 12)
+		.Add(contents)
+		.Add(listScroll)
+		.AddGroup(B_HORIZONTAL, B_USE_SMALL_SPACING)
+			.Add(MakeButton("New page", MSG_NEW_ENTRY))
+			.Add(MakeButton("Delete", MSG_DELETE_ENTRY))
+			.AddGlue()
+		.End();
+	BLayoutBuilder::Group<>(spread->RightPage()->GroupLayout())
+		.SetInsets(24, 10, 12, 12)
+		.Add(fTitle)
+		.Add(bodyScroll);
 
 	BLayoutBuilder::Group<>(this, B_VERTICAL, 0)
 		.Add(new SectionHeader(index))
-		.AddSplit(B_HORIZONTAL, B_USE_SMALL_SPACING)
-			.SetInsets(10, 8, 10, 10)
-			.AddGroup(B_VERTICAL, B_USE_SMALL_SPACING, 1)
-				.Add(contents)
-				.Add(listScroll)
-				.AddGroup(B_HORIZONTAL, B_USE_SMALL_SPACING)
-					.Add(MakeButton("New page", MSG_NEW_ENTRY))
-					.Add(MakeButton("Delete", MSG_DELETE_ENTRY))
-				.End()
-			.End()
-			.AddGroup(B_VERTICAL, B_USE_SMALL_SPACING, 3)
-				.Add(fTitle)
-				.Add(bodyScroll)
-			.End()
-		.End();
+		.Add(spread);
 
 	Reload();
 }

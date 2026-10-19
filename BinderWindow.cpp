@@ -143,12 +143,12 @@ BinderWindow::SelectSection(int32 index)
 	fLeftTabs->SetSelected(index);
 	fRightTabs->SetSelected(index);
 
-	// The Calendar's two-page spread has its own rings down the middle;
-	// the other sections are single pages with the rings along the left.
-	// (IsHidden(fRings) ignores the window, which is still hidden while
-	// the first section is selected.)
+	// The Planner is a single full-width page with the rings along its
+	// left edge; the other sections are two-page spreads with the rings
+	// down the middle. (IsHidden(fRings) ignores the window, which is
+	// still hidden while the first section is selected.)
 	fRings->SetSection(index);
-	if (index == SECTION_CALENDAR) {
+	if (index != SECTION_PLANNER) {
 		if (!fRings->IsHidden(fRings))
 			fRings->Hide();
 	} else if (fRings->IsHidden(fRings))

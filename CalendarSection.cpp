@@ -18,6 +18,8 @@
 #include <math.h>
 #include <vector>
 
+#include "Spread.h"
+
 
 static const FieldSpec kAppointmentFields[] = {
 	{ "title",		"Description",	FIELD_TEXT,		NULL, true },
@@ -179,18 +181,7 @@ private:
 
 	void _DrawRings(BRect bounds, float middle)
 	{
-		int rings = 6;
-		for (int i = 0; i < rings; i++) {
-			float y = floorf(bounds.top + (i + 0.5f) * bounds.Height() / rings);
-			BRect ring(middle - 26, y - 5, middle + 26, y + 5);
-			SetHighColor(120, 120, 128);
-			FillRoundRect(ring.OffsetByCopy(0, 2), 5, 5);
-			SetHighColor(205, 205, 215);
-			FillRoundRect(ring, 5, 5);
-			SetHighColor(250, 250, 255);
-			StrokeLine(BPoint(ring.left + 5, ring.top + 2),
-				BPoint(ring.right - 5, ring.top + 2));
-		}
+		DrawBinderRings(this, bounds, middle);
 	}
 
 	void _CollectEntries(const SimpleDate& date, std::vector<DayEntry>& out)

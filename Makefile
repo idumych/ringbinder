@@ -6,6 +6,7 @@ TYPE = APP
 APP_MIME_SIG = application/x-vnd.Ringbinder
 
 SRCS = \
+	AnniversarySection.cpp \
 	App.cpp \
 	BinderWindow.cpp \
 	GoogleSettingsWindow.cpp \
@@ -20,6 +21,7 @@ SRCS = \
 	RecordListSection.cpp \
 	Section.cpp \
 	SectionFactory.cpp \
+	Spread.cpp \
 	TabStrip.cpp \
 	sync/CurlTransport.cpp \
 	sync/GoogleAuth.cpp \
