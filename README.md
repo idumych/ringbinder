@@ -42,6 +42,22 @@ sudo apt install ./ringbinder_1.1.1-1_amd64.deb
 It appears in the Deskbar's Applications menu and as `ringbinder`. It is
 built for VitruvianOS 0.6.x; apt pulls in libcurl if it's missing.
 
+**Linux.** Download `Ringbinder-1.3.0-x86_64.AppImage` from the
+[1.3.0 release](https://github.com/idumych/ringbinder/releases/tag/v1.3.0),
+make it executable and run it:
+
+```sh
+chmod +x Ringbinder-1.3.0-x86_64.AppImage
+./Ringbinder-1.3.0-x86_64.AppImage
+```
+
+It runs on x86-64 distributions with glibc 2.38 or newer (Ubuntu 24.04,
+Debian 13, Fedora 39 and later), using the
+[Cosmoe](https://github.com/haydentech/cosmoe) library, which it bundles.
+Cosmoe supports X11 and Wayland; so far it has only been tested on X11.
+Your data is kept in `~/.config/cosmoe/Ringbinder/`. Use the web version
+instead if you'd rather not run a native app.
+
 ## Sections
 
 | Tab | What it does |
@@ -179,6 +195,15 @@ g++ -O2 -std=c++11 -o Ringbinder *.cpp sync/*.cpp -lbe -lnetwork -lcurl
 rc Ringbinder.rdef && xres -o Ringbinder Ringbinder.rsrc
 mimeset -f Ringbinder
 ```
+
+### Linux (AppImage)
+
+`make` also builds on plain Linux against [Cosmoe](https://github.com/haydentech/cosmoe)
+(the Haiku API as a library). `sh packaging/appimage/build-appimage.sh`
+builds the AppImage: by default it downloads Cosmoe's prebuilt packages
+(Ubuntu 26.04, so the result needs glibc 2.43 or newer), and with
+`COSMOE_FROM_SOURCE=1` it builds Cosmoe from source, which GitHub Actions
+does on Ubuntu 24.04 for the release builds.
 
 ### VitruvianOS
 

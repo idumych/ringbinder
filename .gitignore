@@ -11,3 +11,5 @@ sync/tests/auth_test
 /.vos-sdk/
 *.deb
 *.o
+/.cosmoe/
+/Ringbinder-*.AppImage

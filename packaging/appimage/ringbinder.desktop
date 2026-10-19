@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Ringbinder
+GenericName=Personal Organizer
+Comment=A tabbed personal organizer: diary, tasks, contacts, calls, year planner, notes and anniversaries
+Exec=Ringbinder
+Icon=ringbinder
+Terminal=false
+Categories=Office;Calendar;ContactManagement;
+Keywords=organizer;diary;calendar;planner;todo;contacts;notes;
+StartupWMClass=Ringbinder

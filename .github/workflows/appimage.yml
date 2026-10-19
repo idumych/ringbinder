@@ -1,0 +1,64 @@
+name: appimage
+
+# Ringbinder for any x86_64 Linux desktop, built with Cosmoe from source on
+# Ubuntu 24.04 so the AppImage runs on that glibc (2.38) or newer. Run it by
+# hand, or push a v* tag to attach the AppImage to that release.
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  appimage:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential meson ninja-build pkg-config flex bison curl file \
+            libcairo2-dev libpng-dev libjpeg-dev libwebp-dev libtiff-dev \
+            zlib1g-dev libicu-dev libpango1.0-dev libicns-dev libraw-dev \
+            libpixman-1-dev libfontconfig1-dev libglib2.0-dev \
+            libx11-dev libx11-xcb-dev libxcursor-dev libxrandr-dev \
+            libxkbcommon-dev libxkbcommon-x11-dev libwayland-dev \
+            wayland-protocols libfuse3-dev desktop-file-utils \
+            libcurl4-openssl-dev
+
+      - name: Cosmoe version
+        id: cosmoe
+        run: echo "tag=$(sed -n 's/^COSMOE_TAG=//p' packaging/appimage/build-appimage.sh)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Cosmoe build
+        uses: actions/cache@v4
+        with:
+          path: .cosmoe/stage
+          key: cosmoe-${{ steps.cosmoe.outputs.tag }}-ubuntu-24.04-release
+
+      - name: Build AppImage
+        env:
+          COSMOE_FROM_SOURCE: '1'
+        run: sh packaging/appimage/build-appimage.sh
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Ringbinder-AppImage
+          path: Ringbinder-*.AppImage
+
+      - name: Attach to release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        # Keep an AppImage that is already attached (the tested build that
+        # SHA256SUMS describes); only add one if the release has none.
+        run: |
+          if gh release view "${GITHUB_REF_NAME}" --json assets --jq '.assets[].name' | grep -q '\.AppImage$'; then
+            echo "Release already has an AppImage; leaving it."
+          else
+            gh release upload "${GITHUB_REF_NAME}" Ringbinder-*.AppImage
+          fi
