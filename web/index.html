@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ringbinder</title>
+<meta name="description" content="A tabbed personal organizer: calendar, to do, address book, calls, year planner, notepad and anniversaries.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='3' y='2' width='26' height='28' rx='3' fill='%23462a22'/%3E%3Crect x='9' y='5' width='17' height='22' fill='%23fdfaec'/%3E%3Crect x='5' y='8' width='8' height='3' rx='1.5' fill='%23aaa'/%3E%3Crect x='5' y='15' width='8' height='3' rx='1.5' fill='%23aaa'/%3E%3Crect x='5' y='22' width='8' height='3' rx='1.5' fill='%23aaa'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header id="menubar">
+  <strong>Ringbinder</strong>
+  <span class="grow"></span>
+  <span id="saveStatus" aria-live="polite"></span>
+  <button type="button" data-menu="export">Export…</button>
+  <button type="button" data-menu="import">Import…</button>
+  <button type="button" data-menu="help">Keys</button>
+  <input type="file" id="importFile" accept="application/json,.json" hidden>
+</header>
+
+<div id="binder">
+  <nav class="tabs left" id="tabsLeft" aria-label="Sections turned past"></nav>
+  <main id="page"></main>
+  <nav class="tabs right" id="tabsRight" aria-label="Sections to come"></nav>
+</div>
+
+<dialog id="editor"><form method="dialog" id="editorForm"></form></dialog>
+<dialog id="help">
+  <form method="dialog">
+    <h2>Keyboard</h2>
+    <table>
+      <tr><td><kbd>1</kbd> … <kbd>7</kbd></td><td>Turn to a section</td></tr>
+      <tr><td><kbd>N</kbd> / <kbd>E</kbd> / <kbd>D</kbd></td><td>New / edit / delete entry</td></tr>
+      <tr><td><kbd>K</kbd></td><td>Mark task or call done / not done</td></tr>
+      <tr><td><kbd>←</kbd> / <kbd>→</kbd> / <kbd>T</kbd></td><td>Previous / next week or year, back to today</td></tr>
+    </table>
+    <p class="note">Everything is saved in this browser as you go. Use Export to keep a copy or move it elsewhere.</p>
+    <menu><button class="primary">Close</button></menu>
+  </form>
+</dialog>
+
+<script src="app.js"></script>
+</body>
+</html>

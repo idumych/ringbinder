@@ -130,6 +130,31 @@ third-party server is involved and there is no shared key to be revoked.
   and the client secret in its settings file; remove access at any time at
   <https://myaccount.google.com/permissions>.
 
+## Web version
+
+`web/` is a port of Ringbinder that runs in any modern browser: plain
+HTML, CSS and JavaScript with no build step and no dependencies. It has the
+same seven sections, the same To Do and Address filtering, and the same
+tab-migrating binder.
+
+To try it, serve the folder (or just open `web/index.html`):
+
+```sh
+python3 -m http.server -d web 8000   # then visit http://localhost:8000
+```
+
+To publish it, copy the `web/` folder to any static host.
+
+- Data is stored in the browser's `localStorage`, so it stays on that
+  device. **Export…** saves the whole binder as a JSON file and **Import…**
+  replaces the binder with one; use them to back up or move between browsers.
+  The export is not the native app's `organizer.data` format.
+- Keys: `1`–`7` turn to a section, `N` / `E` / `D` new / edit / delete,
+  `K` done, `←` / `→` / `T` previous / next / today.
+- Google Calendar and Contacts sync is not part of the web version.
+- A self-hosted version with user login is planned, so a binder can live on
+  your own server instead of in one browser.
+
 ## Building
 
 Install the development tools if you haven't, plus libcurl's headers for Google
