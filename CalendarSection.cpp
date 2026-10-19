@@ -62,6 +62,10 @@ DayEntryLess(const DayEntry& a, const DayEntry& b)
 
 class WeekView : public BView {
 public:
+	enum {
+		kToolbarHeight = 28
+	};
+
 	WeekView(DataStore* store, BHandler* owner)
 		:
 		BView("week", B_WILL_DRAW | B_FULL_UPDATE_ON_RESIZE),
@@ -69,7 +73,8 @@ public:
 		fOwner(owner),
 		fMonday(StartOfWeek(Today())),
 		fSelectedId(-1),
-		fSelectedDate(Today())
+		fSelectedDate(Today()),
+		fHoverButton(-1)
 	{
 		SetViewColor(B_TRANSPARENT_COLOR);
 		SetExplicitMinSize(BSize(560, 380));
@@ -462,6 +467,7 @@ private:
 	SimpleDate			fMonday;
 	int64				fSelectedId;
 	SimpleDate			fSelectedDate;
+	int32				fHoverButton;
 	std::vector<Hit>	fEntryHits;
 	std::vector<Hit>	fDayHits;
 };
