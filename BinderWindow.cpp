@@ -40,14 +40,15 @@ BinderWindow::BinderWindow(DataStore* store)
 		fSections[i] = CreateSection(i, store);
 		fCards->AddChild(fSections[i]);
 	}
-	fTabs = new TabStrip();
+	fLeftTabs = new TabStrip(true);
+	fRightTabs = new TabStrip(false);
 
 	BLayoutBuilder::Group<>(this, B_VERTICAL, 0)
 		.Add(_BuildMenuBar())
 		.AddGroup(B_HORIZONTAL, 0)
-			.Add(new BinderSpine())
+			.Add(fLeftTabs)
 			.Add(fCards)
-			.Add(fTabs)
+			.Add(fRightTabs)
 		.End();
 
 	SelectSection(store->LastSection());
@@ -137,7 +138,8 @@ BinderWindow::SelectSection(int32 index)
 
 	fCurrent = index;
 	fCards->CardLayout()->SetVisibleItem(index);
-	fTabs->SetSelected(index);
+	fLeftTabs->SetSelected(index);
+	fRightTabs->SetSelected(index);
 
 	BString title(APP_NAME " \xE2\x80\x94 ");
 	title << kSectionNames[index];

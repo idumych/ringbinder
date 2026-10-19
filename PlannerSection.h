@@ -2,8 +2,8 @@
  * Ringbinder - a tabbed personal organizer for Haiku
  * Distributed under the terms of the MIT License.
  *
- * Year-at-a-glance planner: 12 month rows by 31 day columns, with colour
- * coded blocks for vacations, trips, training and so on.
+ * Year-at-a-glance planner: 12 month rows by 37 weekday columns, with
+ * colour coded blocks for vacations, trips, training and so on.
  */
 #ifndef PLANNER_SECTION_H
 #define PLANNER_SECTION_H

@@ -44,7 +44,8 @@ private:
 
 			DataStore*		fStore;
 			BCardView*		fCards;
-			TabStrip*		fTabs;
+			TabStrip*		fLeftTabs;
+			TabStrip*		fRightTabs;
 			Section*		fSections[SECTION_COUNT];
 			int32			fCurrent;
 

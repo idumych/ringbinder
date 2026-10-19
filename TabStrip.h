@@ -2,8 +2,12 @@
  * Ringbinder - a tabbed personal organizer for Haiku
  * Distributed under the terms of the MIT License.
  *
- * The coloured section tabs down the right edge of the binder, and the
- * leather spine on the left.
+ * The coloured section tabs along the edges of the binder. Like the
+ * dividers in a real ring binder, the tabs of the sections you have
+ * turned past sit on the left-hand edge (with the open section's tab
+ * last), and the sections still to come stay on the right. Each tab keeps
+ * its height, so turning to a section moves its tab across the binder.
+ * The left-hand strip also draws the leather spine.
  */
 #ifndef TAB_STRIP_H
 #define TAB_STRIP_H
@@ -13,7 +17,7 @@
 
 class TabStrip : public BView {
 public:
-							TabStrip();
+							TabStrip(bool leftEdge);
 
 			void			SetSelected(int32 index);
 			int32			Selected() const { return fSelected; }
@@ -22,16 +26,13 @@ public:
 	virtual	void			MouseDown(BPoint where);
 
 private:
+			bool			_IsOnThisEdge(int32 index) const;
 			BRect			_TabRect(int32 index) const;
+			void			_DrawSpine(BRect bounds);
+			void			_DrawTab(int32 index);
 
+			bool			fLeftEdge;
 			int32			fSelected;
-};
-
-
-class BinderSpine : public BView {
-public:
-							BinderSpine();
-	virtual	void			Draw(BRect updateRect);
 };
 
 #endif // TAB_STRIP_H

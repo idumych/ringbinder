@@ -46,6 +46,22 @@ static const float kMonthColumn = 86;
 static const float kTopRow = 22;
 static const float kLegendHeight = 28;
 
+// Like a paper year planner, the columns are weekdays rather than dates:
+// each month's row starts under the weekday of its 1st, so weekends line
+// up as vertical stripes. A month can span 37 columns (starting on a
+// Sunday, with 31 days).
+static const int kColumns = 37;
+
+static const rgb_color kAltRowColor = { 250, 243, 210, 255 };
+static const rgb_color kWeekendColor = { 226, 220, 202, 255 };
+static const rgb_color kHatchColor = { 196, 188, 166, 255 };
+static const rgb_color kDayNumberColor = { 160, 154, 134, 255 };
+static const rgb_color kMonthStartColor = { 200, 40, 40, 255 };
+
+// diagonal hatching for the cells before the 1st and after the last day
+static const pattern kHatch = { { 0x88, 0x44, 0x22, 0x11,
+	0x88, 0x44, 0x22, 0x11 } };
+
 
 static rgb_color
 CategoryColor(const BString& category)
@@ -89,7 +105,7 @@ public:
 		fDragging(false)
 	{
 		SetViewColor(B_TRANSPARENT_COLOR);
-		SetExplicitMinSize(BSize(kMonthColumn + 31 * 16 + 16, 360));
+		SetExplicitMinSize(BSize(kMonthColumn + kColumns * 16 + 16, 360));
 	}
 
 	int Year() const { return fYear; }
@@ -121,48 +137,79 @@ public:
 		font_height fh;
 		bold.GetHeight(&fh);
 
-		// day numbers along the top
+		// weekday initials along the top
 		SetFont(&small);
 		SetLowColor(kPaperColor);
-		SetHighColor(kInkColor);
-		for (int day = 1; day <= 31; day++) {
-			BRect cell = _CellRect(1, day);
-			BString number;
-			number << day;
-			float width = StringWidth(number.String());
-			DrawString(number.String(), BPoint(
+		for (int column = 0; column < kColumns; column++) {
+			BRect cell = _ColumnRect(1, column);
+			char letter[2] = { kShortDayNames[column % 7][0], '\0' };
+			float width = StringWidth(letter);
+			SetHighColor(column % 7 >= 5 ? kDayNumberColor : kInkColor);
+			DrawString(letter, BPoint(
 				cell.left + (cell.Width() - width) / 2, kTopRow - 6));
 		}
 
 		SimpleDate today = Today();
-		rgb_color weekend = make_color(236, 230, 210);
-		rgb_color invalid = make_color(205, 198, 182);
+		BFont tiny(be_plain_font);
+		tiny.SetSize(8);
+		font_height tinyHeight;
+		tiny.GetHeight(&tinyHeight);
+		bool showNumbers = _ColumnRect(1, 0).Width() >= 14;
 
 		for (int month = 1; month <= 12; month++) {
-			BRect row = _CellRect(month, 1);
+			BRect row = _ColumnRect(month, 0)
+				| _ColumnRect(month, kColumns - 1);
+			rgb_color paper = month % 2 == 0 ? kAltRowColor : kPaperColor;
+			SetHighColor(paper);
+			FillRect(row);
+
 			SetFont(&bold);
+			SetLowColor(kPaperColor);
 			SetHighColor(kInkColor);
 			DrawString(kMonthNames[month - 1], BPoint(bounds.left + 10,
 				row.top + (row.Height() + fh.ascent) / 2 - 1));
 
-			for (int day = 1; day <= 31; day++) {
-				BRect cell = _CellRect(month, day);
-				if (day > DaysInMonth(fYear, month)) {
-					SetHighColor(invalid);
-					FillRect(cell);
-					continue;
-				}
-				SimpleDate date(fYear, month, day);
-				if (DayOfWeek(date) >= 5) {
-					SetHighColor(weekend);
-					FillRect(cell);
+			int offset = _Offset(month);
+			int days = DaysInMonth(fYear, month);
+			SetFont(&tiny);
+			for (int column = 0; column < kColumns; column++) {
+				BRect cell = _ColumnRect(month, column);
+				int day = column - offset + 1;
+				if (day < 1 || day > days) {
+					SetHighColor(kHatchColor);
+					SetLowColor(kWeekendColor);
+					FillRect(cell, kHatch);
+				} else {
+					rgb_color background = paper;
+					if (column % 7 >= 5) {
+						background = kWeekendColor;
+						SetHighColor(background);
+						FillRect(cell);
+					}
+					if (showNumbers) {
+						// top right, clear of the red corner on the 1st
+						BString number;
+						number << day;
+						SetLowColor(background);
+						SetHighColor(kDayNumberColor);
+						DrawString(number.String(), BPoint(
+							cell.right - 2 - tiny.StringWidth(number.String()),
+							cell.top + tinyHeight.ascent + 1));
+					}
 				}
 				SetHighColor(kRuleColor);
 				StrokeRect(cell);
-				if (date == today) {
-					SetHighColor(200, 40, 40);
-					StrokeRect(cell.InsetByCopy(1, 1));
-				}
+			}
+
+			// a red corner marks the 1st, as on a paper planner
+			BRect first = _CellRect(month, 1);
+			SetHighColor(kMonthStartColor);
+			FillTriangle(first.LeftTop(), first.LeftTop() + BPoint(7, 0),
+				first.LeftTop() + BPoint(0, 7));
+
+			if (today.year == fYear && today.month == month) {
+				SetHighColor(200, 40, 40);
+				StrokeRect(_CellRect(month, today.day).InsetByCopy(1, 1));
 			}
 		}
 
@@ -231,29 +278,44 @@ public:
 	}
 
 private:
-	BRect _CellRect(int month, int day) const
+	// Column of the 1st of a month: 0 for Monday .. 6 for Sunday.
+	int _Offset(int month) const
+	{
+		return DayOfWeek(SimpleDate(fYear, month, 1));
+	}
+
+	BRect _ColumnRect(int month, int column) const
 	{
 		BRect bounds = Bounds();
-		float width = (bounds.Width() - kMonthColumn - 10) / 31;
+		float width = (bounds.Width() - kMonthColumn - 10) / kColumns;
 		float height = (bounds.Height() - kTopRow - kLegendHeight - 6) / 12;
-		float left = floorf(bounds.left + kMonthColumn + (day - 1) * width);
+		float left = floorf(bounds.left + kMonthColumn + column * width);
 		float top = floorf(bounds.top + kTopRow + (month - 1) * height);
 		return BRect(left, top,
-			floorf(bounds.left + kMonthColumn + day * width),
+			floorf(bounds.left + kMonthColumn + (column + 1) * width),
 			floorf(bounds.top + kTopRow + month * height));
+	}
+
+	BRect _CellRect(int month, int day) const
+	{
+		return _ColumnRect(month, _Offset(month) + day - 1);
 	}
 
 	bool _DateAt(BPoint where, SimpleDate& date) const
 	{
 		for (int month = 1; month <= 12; month++) {
-			BRect first = _CellRect(month, 1);
-			if (where.y < first.top || where.y > first.bottom)
+			BRect row = _ColumnRect(month, 0)
+				| _ColumnRect(month, kColumns - 1);
+			if (!row.Contains(where))
 				continue;
-			for (int day = 1; day <= DaysInMonth(fYear, month); day++) {
-				if (_CellRect(month, day).Contains(where)) {
-					date = SimpleDate(fYear, month, day);
-					return true;
-				}
+			for (int column = 0; column < kColumns; column++) {
+				if (!_ColumnRect(month, column).Contains(where))
+					continue;
+				int day = column - _Offset(month) + 1;
+				if (day < 1 || day > DaysInMonth(fYear, month))
+					return false;
+				date = SimpleDate(fYear, month, day);
+				return true;
 			}
 		}
 		return false;
