@@ -207,22 +207,14 @@ static const float kHeaderHeight = 40;	// see SectionHeader
 static const int kRingCount = 6;		// as on the Calendar
 
 
-RingMargin::RingMargin()
+RingMargin::RingMargin(int32 section)
 	:
 	BView("rings", B_WILL_DRAW | B_FULL_UPDATE_ON_RESIZE),
-	fSection(0)
+	fSection(section)
 {
 	SetViewColor(B_TRANSPARENT_COLOR);
 	SetExplicitMinSize(BSize(kRingMarginWidth, B_SIZE_UNSET));
 	SetExplicitMaxSize(BSize(kRingMarginWidth, B_SIZE_UNLIMITED));
-}
-
-
-void
-RingMargin::SetSection(int32 index)
-{
-	fSection = index;
-	Invalidate();
 }
 
 

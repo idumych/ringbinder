@@ -42,13 +42,11 @@ BinderWindow::BinderWindow(DataStore* store)
 	}
 	fLeftTabs = new TabStrip(true);
 	fRightTabs = new TabStrip(false);
-	fRings = new RingMargin();
 
 	BLayoutBuilder::Group<>(this, B_VERTICAL, 0)
 		.Add(_BuildMenuBar())
 		.AddGroup(B_HORIZONTAL, 0)
 			.Add(fLeftTabs)
-			.Add(fRings)
 			.Add(fCards)
 			.Add(fRightTabs)
 		.End();
@@ -142,17 +140,6 @@ BinderWindow::SelectSection(int32 index)
 	fCards->CardLayout()->SetVisibleItem(index);
 	fLeftTabs->SetSelected(index);
 	fRightTabs->SetSelected(index);
-
-	// The Planner is a single full-width page with the rings along its
-	// left edge; the other sections are two-page spreads with the rings
-	// down the middle. (IsHidden(fRings) ignores the window, which is
-	// still hidden while the first section is selected.)
-	fRings->SetSection(index);
-	if (index != SECTION_PLANNER) {
-		if (!fRings->IsHidden(fRings))
-			fRings->Hide();
-	} else if (fRings->IsHidden(fRings))
-		fRings->Show();
 
 	BString title(APP_NAME " \xE2\x80\x94 ");
 	title << kSectionNames[index];

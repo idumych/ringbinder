@@ -17,6 +17,8 @@
 #include <algorithm>
 #include <math.h>
 
+#include "TabStrip.h"
+
 
 static const char* kPlannerCategories[] = {
 	"Meeting", "Vacation", "Travel", "Training", "Holiday", "Other"
@@ -464,10 +466,14 @@ PlannerSection::PlannerSection(int32 index, DataStore* store)
 	layout->AddView(MakeButton("Edit", MSG_EDIT_ENTRY));
 	layout->AddView(MakeButton("Delete", MSG_DELETE_ENTRY));
 
-	BLayoutBuilder::Group<>(this, B_VERTICAL, 0)
-		.Add(new SectionHeader(index))
-		.Add(toolbar)
-		.Add(fYear);
+	// A single full-width page, punched down its left edge for the rings
+	BLayoutBuilder::Group<>(this, B_HORIZONTAL, 0)
+		.Add(new RingMargin(index))
+		.AddGroup(B_VERTICAL, 0)
+			.Add(new SectionHeader(index))
+			.Add(toolbar)
+			.Add(fYear)
+		.End();
 
 	_UpdateLabels();
 }

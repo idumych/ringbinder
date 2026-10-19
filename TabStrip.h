@@ -36,14 +36,13 @@ private:
 };
 
 
-// The left margin of a single-page section, with punched holes and the
-// binder's metal rings, as on the year planner page of a paper organizer.
-// (The Calendar's two-page spread has its rings down the middle instead.)
+// The punched left margin of the Planner's single full-width page, with
+// the binder's rings through it, as on a paper organizer's year planner.
+// (The other sections are two-page spreads with the rings down the
+// middle.)
 class RingMargin : public BView {
 public:
-							RingMargin();
-
-			void			SetSection(int32 index);
+							RingMargin(int32 section);
 	virtual	void			Draw(BRect updateRect);
 
 private:
