@@ -8,3 +8,6 @@ sync/tests/auth_test
 /*.vdi
 /*.iso
 /*.zip
+/.vos-sdk/
+*.deb
+*.o

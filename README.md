@@ -1,6 +1,6 @@
 # Ringbinder
 
-A tabbed personal organizer for Haiku, modelled on the classic late-90s
+A tabbed personal organizer for Haiku, Renku OS and VitruvianOS, modelled on the classic late-90s
 desktop organizers: a leather ring binder with coloured section dividers,
 two-page spreads for each section, a week-at-a-glance diary, and everything
 saved automatically.
@@ -19,17 +19,27 @@ two-way sync with Google Calendar and Google Contacts uses libcurl.
 
 ## Install
 
-Download `ringbinder-1.1.0-1-x86_64.hpkg` from the
+**Haiku and Renku OS.** Download `ringbinder-1.1.1-1-x86_64.hpkg` from the
 [latest release](https://github.com/idumych/ringbinder/releases/latest) and
 install it from a Terminal:
 
 ```sh
-pkgman install ./ringbinder-1.1.0-1-x86_64.hpkg
+pkgman install ./ringbinder-1.1.1-1-x86_64.hpkg
 ```
 
 Ringbinder then appears under **Applications** in the Deskbar menu, and as
 `ringbinder` in the Terminal. It needs Haiku R1/beta6 or later (it has been
 tested on Renku OS) and libcurl, which pkgman installs if it's missing.
+
+**VitruvianOS.** Download `ringbinder_1.1.1-1_amd64.deb` from the same page
+and install it from a Terminal:
+
+```sh
+sudo apt install ./ringbinder_1.1.1-1_amd64.deb
+```
+
+It appears in the Deskbar's Applications menu and as `ringbinder`. It is
+built for VitruvianOS 0.6.x; apt pulls in libcurl if it's missing.
 
 ## Sections
 
@@ -134,15 +144,28 @@ Then in this folder:
 make
 ```
 
-`make hpkg` builds the package instead (see `packaging/haiku/build-hpkg.sh`).
-
 The app is placed in `objects.x86_64-cc13-release/Ringbinder` (the folder
-name depends on your architecture and compiler). Without the makefile-engine:
+name depends on your architecture and compiler). `make hpkg` builds the
+Haiku package instead. Without the makefile-engine:
 
 ```sh
 g++ -O2 -std=c++11 -o Ringbinder *.cpp sync/*.cpp -lbe -lnetwork -lcurl
 rc Ringbinder.rdef && xres -o Ringbinder Ringbinder.rsrc
 mimeset -f Ringbinder
+```
+
+### VitruvianOS
+
+On VitruvianOS the same `make` builds `./Ringbinder`, using the headers from
+`pkg-config vos` (vos-dev) or `/system/develop/headers`, plus libcurl's
+headers (`libcurl4-openssl-dev`). `make deb` builds the Debian package.
+
+On another Linux you can still compile, link and package it, without a
+VitruvianOS machine: `sh tools/vos-sdk/make-sdk.sh` builds a link-time SDK
+from VitruvianOS's source (about four minutes), then
+
+```sh
+. .vos-sdk/sdk/env.sh && make deb
 ```
 
 ## Data
@@ -159,6 +182,8 @@ rather than overwritten.
 |------|---------|
 | `App.cpp` | `BApplication`, loads the data store |
 | `BinderWindow.*` | Main window, menus, routes commands to the visible page |
+| `tools/vos-sdk/` | Builds the VitruvianOS link-time SDK on any Linux host |
+| `packaging/` | `haiku/` (hpkg), `build-deb.sh` and `debian/` (VitruvianOS .deb), release notes |
 | `TabStrip.*` | Section tabs on both edges, the leather spine, and the Planner's punched ring margin |
 | `Spread.*` | An open two-page spread with the rings down the middle |
 | `Section.*` | Base class for a binder page, page header |
