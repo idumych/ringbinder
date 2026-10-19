@@ -252,8 +252,10 @@ DataStore::_SeedFirstRun()
 	SetString(note, "body",
 		"Ringbinder keeps your diary, tasks, contacts, calls, year planner, "
 		"notes and anniversaries in one binder.\n\n"
-		"\xE2\x80\xA2 Click the coloured tabs on the right (or press "
-		"Alt+1 \xE2\x80\xA6 Alt+7) to turn to a section.\n"
+		"\xE2\x80\xA2 Click a coloured tab to turn to its section, or "
+		"press Alt+1 \xE2\x80\xA6 Alt+7. Like the dividers in a real "
+		"binder, the tabs of the sections you have turned past move to "
+		"the left-hand edge.\n"
 		"\xE2\x80\xA2 Double-click an empty day in the Calendar to add an "
 		"appointment; double-click an entry to edit it.\n"
 		"\xE2\x80\xA2 In the Planner, drag across days to block out a "
