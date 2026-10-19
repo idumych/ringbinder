@@ -176,6 +176,15 @@ TabStrip::_DrawTab(int32 index)
 		font.SetRotation(270);
 		start = BPoint(floorf(centerX - half), floorf(centerY - width / 2));
 	}
+#ifdef APP_COSMOE
+	// Cosmoe turns rotated text about the top-left corner of its box rather
+	// than about the baseline origin, so it lands one ascent off to the
+	// side. Move the start point to compensate.
+	if (fLeftEdge)
+		start += BPoint(-fh.ascent, fh.ascent);
+	else
+		start += BPoint(fh.ascent, fh.ascent);
+#endif
 	SetFont(&font);
 	SetLowColor(color);
 	SetHighColor(kInkColor);

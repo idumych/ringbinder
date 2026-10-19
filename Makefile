@@ -1,9 +1,10 @@
-## Ringbinder: builds on Haiku/Renku OS and on VitruvianOS (V\OS) from the
-## same sources.
+## Ringbinder: builds on Haiku/Renku OS, on VitruvianOS (V\OS) and on plain
+## Linux (through Cosmoe) from the same sources.
 ##
-##   make          -> Haiku: objects.*/Ringbinder   V\OS: ./Ringbinder
+##   make          -> Haiku: objects.*/Ringbinder   V\OS, Linux: ./Ringbinder
 ##   make hpkg     -> Haiku package (see packaging/haiku/build-hpkg.sh)
 ##   make deb      -> V\OS Debian package (see packaging/build-deb.sh)
+##   make appimage -> Linux AppImage (see packaging/appimage/build-appimage.sh)
 ##   make test     -> sync engine unit tests (any OS, no Haiku API needed)
 
 NAME = Ringbinder
@@ -60,6 +61,7 @@ CXX      ?= g++
 CXXFLAGS ?= -O2 -g
 override CXXFLAGS += -std=c++11 -Wall -Wno-multichar
 VOS_HEADERS ?= /system/develop/headers
+COSMOE_ROOT ?= $(CURDIR)/.cosmoe/stage/usr
 VOS_ARCH := $(if $(filter aarch64,$(shell uname -m)),arm64,$(shell uname -m))
 
 # Headers and flags come from the vos-dev package through pkg-config, or
@@ -69,6 +71,7 @@ ifeq ($(shell pkg-config --exists vos && echo yes),yes)
   PLATFORM    := VitruvianOS
   override CXXFLAGS += $(shell pkg-config --cflags vos) -fPIC
   LIBS        := $(shell pkg-config --libs vos) -ltracker -ltranslation -lcurl
+  RESOURCES    = $(VOS_RESOURCES)
 else ifneq ($(wildcard $(VOS_HEADERS)/os/BeBuild.h),)
   # VitruvianOS 0.6.x has no vos-dev/pkg-config yet: the headers ship in the
   # system package under /system/develop/headers.
@@ -84,9 +87,36 @@ else ifneq ($(wildcard $(VOS_HEADERS)/os/BeBuild.h),)
   override CXXFLAGS += $(addprefix -I$(VOS_HEADERS)/,$(VOS_DIRS)) \
                  -include LinuxBuildCompatibility.h -fPIC
   LIBS        := -lbe -lroot -ltracker -ltranslation -lcurl
+  RESOURCES    = $(VOS_RESOURCES)
+else ifneq ($(wildcard $(COSMOE_ROOT)/include/os/app/Application.h),)
+  # Plain Linux with Cosmoe (the Haiku API as a library on X11/Wayland).
+  # COSMOE_ROOT is its install prefix; build-appimage.sh points it at a
+  # staged copy that ships inside the AppImage.
+  PLATFORM    := Cosmoe
+  COSMOE_DIRS := config os os/app os/game os/interface os/kernel os/locale \
+                 os/media os/net os/storage os/support os/translation \
+                 os/be_apps/Tracker private/interface private/shared \
+                 private/support posix
+  override CXXFLAGS += -I$(COSMOE_ROOT)/include \
+                 $(addprefix -I$(COSMOE_ROOT)/include/,$(COSMOE_DIRS)) \
+                 -DAPP_COSMOE -fPIC
+  # libbe finds Cosmoe's add-ons and data next to itself, so the AppImage
+  # (bin/Ringbinder + lib/) works wherever it is mounted.
+  COSMOE_RPATH ?= $$ORIGIN/../lib
+  LIBS        := -L$(COSMOE_ROOT)/lib -lbe -ltracker -lcurl \
+                 -Wl,-rpath,'$(COSMOE_RPATH)'
+  # Cosmoe reads resources from a .cosmoe_rsrc section linked into the app.
+  EXTRA_OBJS  := obj/Ringbinder.rsrc.o
+  RESOURCES    = true
 else
   PLATFORM    := none
 endif
+
+# V\OS keeps the app signature both as resources and as attributes
+# (absolute paths, as V\OS's own build passes them to xres/resattr)
+VOS_RESOURCES = rc -o $(CURDIR)/obj/Ringbinder.rsrc $(CURDIR)/Ringbinder.rdef \
+	&& xres -o $(CURDIR)/$@ $(CURDIR)/obj/Ringbinder.rsrc \
+	&& resattr -O -o $(CURDIR)/$@ $(CURDIR)/obj/Ringbinder.rsrc
 
 OBJS := $(patsubst %.cpp,obj/%.o,$(SRCS))
 
@@ -94,9 +124,11 @@ all: check-platform $(NAME)
 
 check-platform:
 ifeq ($(PLATFORM),none)
-	@echo "Ringbinder needs Haiku or VitruvianOS. On VitruvianOS it uses"
-	@echo "'pkg-config vos' (vos-dev) or the headers in $(VOS_HEADERS);"
-	@echo "on another Linux, build the link-time SDK with"
+	@echo "Ringbinder needs Haiku, VitruvianOS, or Linux with Cosmoe. On"
+	@echo "VitruvianOS it uses 'pkg-config vos' (vos-dev) or the headers in"
+	@echo "$(VOS_HEADERS); on Linux, Cosmoe installed under COSMOE_ROOT=$(COSMOE_ROOT)"
+	@echo "(sh packaging/appimage/build-appimage.sh builds one). To build the"
+	@echo "V\\OS package on another Linux, build the link-time SDK with"
 	@echo "tools/vos-sdk/make-sdk.sh and source .vos-sdk/sdk/env.sh."
 	@echo "(The sync engine tests run anywhere: make test)"
 	@false
@@ -106,17 +138,27 @@ obj/%.o: %.cpp
 	@mkdir -p $(dir $@)
 	$(CXX) $(CXXFLAGS) -MMD -MP -c $< -o $@
 
-# V\OS keeps the app signature both as resources and as attributes
-# (absolute paths, as V\OS's own build passes them to xres/resattr)
-$(NAME): $(OBJS) Ringbinder.rdef
-	$(CXX) $(LDFLAGS) $(OBJS) -o $@ $(LIBS)
-	rc -o $(CURDIR)/obj/Ringbinder.rsrc $(CURDIR)/Ringbinder.rdef
-	xres -o $(CURDIR)/$@ $(CURDIR)/obj/Ringbinder.rsrc
-	resattr -O -o $(CURDIR)/$@ $(CURDIR)/obj/Ringbinder.rsrc
+obj/Ringbinder.rsrc.o: Ringbinder.rdef
+	@mkdir -p obj
+	LD_LIBRARY_PATH=$(COSMOE_ROOT)/lib $(COSMOE_ROOT)/bin/rc \
+		-o obj/Ringbinder.rsrc Ringbinder.rdef
+	cd obj && ld -r -b binary Ringbinder.rsrc -o Ringbinder.rsrc.o
+	objcopy --rename-section .data=.cosmoe_rsrc \
+		--add-section .note.GNU-stack=/dev/null \
+		--set-section-flags .note.GNU-stack=noload,readonly obj/Ringbinder.rsrc.o
+
+$(NAME): $(OBJS) $(EXTRA_OBJS) Ringbinder.rdef
+	@mkdir -p obj
+	$(CXX) $(LDFLAGS) $(OBJS) $(EXTRA_OBJS) -o $@ $(LIBS)
+	$(RESOURCES)
 
 # Debian package for VitruvianOS (see packaging/build-deb.sh)
 deb: all
 	sh packaging/build-deb.sh
+
+# AppImage for Linux, built with Cosmoe (see packaging/appimage/build-appimage.sh)
+appimage:
+	sh packaging/appimage/build-appimage.sh
 
 test:
 	sh sync/tests/run_tests.sh
@@ -126,7 +168,7 @@ clean:
 
 -include $(OBJS:.o=.d)
 
-.PHONY: all check-platform deb test clean
+.PHONY: all check-platform deb appimage test clean
 endif
 
 ## Haiku package, built on Haiku R1/beta6+ (see packaging/haiku/build-hpkg.sh)

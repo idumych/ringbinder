@@ -5,10 +5,17 @@
 #include "GoogleSync.h"
 
 #include <OS.h>
-#include <Url.h>
+#ifndef APP_COSMOE
+#	include <Url.h>
+#endif
 
 #include <stdio.h>
 #include <time.h>
+#ifdef APP_COSMOE
+#	include <spawn.h>
+#	include <sys/wait.h>
+extern char** environ;
+#endif
 
 #include "Constants.h"
 #include "DataStore.h"
@@ -22,6 +29,28 @@ static const char* kCalendarKeys[]
 static const char* kContactKeys[] = { "last", "first", "company",
 	"jobtitle", "phone", "mobile", "email", "address", "birthday", "notes",
 	NULL };
+
+// Opens the sign-in page in the user's web browser
+static status_t
+OpenInBrowser(const std::string& url)
+{
+#ifdef APP_COSMOE
+	// Cosmoe's BUrl can't launch the Linux desktop's browser
+	char* argv[] = { const_cast<char*>("xdg-open"),
+		const_cast<char*>(url.c_str()), NULL };
+	pid_t pid;
+	if (posix_spawnp(&pid, "xdg-open", NULL, NULL, argv, environ) != 0)
+		return B_ERROR;
+	int status;
+	if (waitpid(pid, &status, 0) < 0)
+		return B_ERROR;
+	return WIFEXITED(status) && WEXITSTATUS(status) == 0 ? B_OK : B_ERROR;
+#else
+	BUrl browserUrl(url.c_str(), false);
+	return browserUrl.OpenWithPreferredApplication(false);
+#endif
+}
+
 
 // Set by CancelConnect(); polled once a second by the sign-in thread
 static volatile int sCancelConnect = 0;
@@ -51,8 +80,7 @@ ConnectThread(void* data)
 	} else {
 		std::string url = flow.AuthorizationUrl(job->clientId,
 			GoogleAuth::kScopes);
-		BUrl browserUrl(url.c_str(), false);
-		if (browserUrl.OpenWithPreferredApplication(false) != B_OK) {
+		if (OpenInBrowser(url) != B_OK) {
 			reply.AddString("error", "Could not open the web browser.");
 		} else if (!flow.WaitForCode(5 * 60, &sCancelConnect, code, error)) {
 			reply.AddString("error", error.c_str());
