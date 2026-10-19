@@ -138,6 +138,61 @@ public:
 		if (Window()->CurrentMessage() != NULL)
 			Window()->CurrentMessage()->FindInt32("clicks", &clicks);
 
+		BRect bounds = Bounds();
+		float middle = floorf(bounds.left + bounds.Width() / 2);
+		float gutter = 36;
+		float tabWidth = 28;
+
+		// toolbar hits (spans both pages)
+		if (where.y < bounds.top + kToolbarHeight) {
+			float tx = tabWidth + 2 + 4;
+			int32 buttons[] = { MSG_PREV, MSG_GO_TODAY, MSG_NEXT };
+			const char* btnLabels[] = { "\xE2\x97\x80 Prev", "Today",
+				"Next \xE2\x96\xB6" };
+			for (int i = 0; i < 3; i++) {
+				BFont bold(be_bold_font);
+				bold.SetSize(12);
+				float w = bold.StringWidth(btnLabels[i]) + 16;
+				BRect btn(tx, bounds.top + 2, tx + w,
+					bounds.top + kToolbarHeight - 2);
+				if (btn.Contains(where)) {
+					BMessenger(fOwner).SendMessage(buttons[i]);
+					return;
+				}
+				if (i == 0) tx = btn.right + 8;
+				else if (i == 1) tx = btn.right + 16;
+				else tx = btn.right + 16;
+			}
+			BRect actionArea(middle + gutter / 2 + 14, bounds.top + 2,
+				bounds.right - 2, bounds.top + kToolbarHeight - 2);
+			if (where.x >= tx && where.x <= actionArea.left
+				&& where.y < bounds.top + kToolbarHeight) {
+				// hit date range label area — ignore
+				goto check_entries;
+			}
+			BFont bold(be_bold_font);
+			bold.SetSize(12);
+			BRect newBtn(actionArea.left, actionArea.top,
+				actionArea.left + 96, actionArea.bottom - 2);
+			BRect editBtn(newBtn.right + 6, actionArea.top,
+				newBtn.right + 50, actionArea.bottom - 2);
+			BRect delBtn(editBtn.right + 6, actionArea.top,
+				editBtn.right + 50, actionArea.bottom - 2);
+			if (newBtn.Contains(where)) {
+				BMessenger(fOwner).SendMessage(MSG_NEW_ENTRY);
+				return;
+			}
+			if (editBtn.Contains(where)) {
+				BMessenger(fOwner).SendMessage(MSG_EDIT_ENTRY);
+				return;
+			}
+			if (delBtn.Contains(where)) {
+				BMessenger(fOwner).SendMessage(MSG_DELETE_ENTRY);
+				return;
+			}
+		}
+
+	check_entries:
 		for (size_t i = 0; i < fEntryHits.size(); i++) {
 			if (!fEntryHits[i].rect.Contains(where))
 				continue;
@@ -161,6 +216,53 @@ public:
 				BMessenger(fOwner).SendMessage(&message);
 			}
 			return;
+		}
+	}
+
+	virtual void MouseMoved(BPoint where, uint32 transit,
+		const BMessage* message)
+	{
+		BRect bounds = Bounds();
+		fHoverButton = -1;
+		if (where.y < bounds.top + kToolbarHeight) {
+			float middle = floorf(bounds.left + bounds.Width() / 2);
+			float gutter = 36;
+			float tabWidth = 28;
+			float tx = tabWidth + 2 + 4;
+			const char* btnLabels[] = { "\xE2\x97\x80 Prev", "Today",
+				"Next \xE2\x96\xB6" };
+			int32 btnCodes[] = { MSG_PREV, MSG_GO_TODAY, MSG_NEXT };
+			for (int i = 0; i < 3; i++) {
+				BFont bold(be_bold_font);
+				bold.SetSize(12);
+				float w = bold.StringWidth(btnLabels[i]) + 16;
+				BRect btn(tx, bounds.top + 2, tx + w,
+					bounds.top + kToolbarHeight - 2);
+				if (btn.Contains(where)) {
+					fHoverButton = btnCodes[i];
+					Invalidate();
+					return;
+				}
+				if (i == 0) tx = btn.right + 8;
+				else tx = btn.right + 16;
+			}
+			BRect actionArea(middle + gutter / 2 + 14, bounds.top + 2,
+				bounds.right - 2, bounds.top + kToolbarHeight - 2);
+			BFont bold(be_bold_font);
+			bold.SetSize(12);
+			BRect newBtn(actionArea.left, actionArea.top,
+				actionArea.left + 96, actionArea.bottom - 2);
+			BRect editBtn(newBtn.right + 6, actionArea.top,
+				newBtn.right + 50, actionArea.bottom - 2);
+			BRect delBtn(editBtn.right + 6, actionArea.top,
+				editBtn.right + 50, actionArea.bottom - 2);
+			if (newBtn.Contains(where))
+				fHoverButton = MSG_NEW_ENTRY;
+			else if (editBtn.Contains(where))
+				fHoverButton = MSG_EDIT_ENTRY;
+			else if (delBtn.Contains(where))
+				fHoverButton = MSG_DELETE_ENTRY;
+			Invalidate();
 		}
 	}
 
