@@ -1,4 +1,4 @@
-Ringbinder now has a VitruvianOS package. The program is the same as 1.1.0; this release adds the `.deb` and builds both packages from one commit.
+Ringbinder now has a VitruvianOS package. The program is the same as 1.1.0; this release only adds the `.deb`.
 
 ## New
 
@@ -14,16 +14,11 @@ It adds Ringbinder to the Deskbar's Applications menu and as `ringbinder` on the
 
 ## Haiku and Renku OS
 
-```sh
-pkgman install ./ringbinder-1.1.1-1-x86_64.hpkg
-```
-
-Unchanged apart from the version number. Requires Haiku R1/beta6 or later, plus libcurl.
+There is no new Haiku package in this release: use `ringbinder-1.1.0-1-x86_64.hpkg` from the [1.1.0 release](https://github.com/idumych/ringbinder/releases/tag/v1.1.0). The program is unchanged.
 
 ## Tested
 
 - **VitruvianOS: not tested.** The `.deb` has not been installed or run on VitruvianOS. What was checked: it compiles and links against the VitruvianOS 0.6.2 libraries (built from source as a link-time SDK); the package's control fields and file list are as intended (its dependency names, including libcurl, have not been checked against a VitruvianOS install); the app signature is in the binary and the attributes that postinst restores (signature, flags, version, file type) are in the package; and the binary needs only glibc 2.38 and old libstdc++ symbols, which Debian trixie provides. Please report anything that doesn't work.
-- **Haiku and Renku OS:** the package is built and packaged on Haiku R1/beta6 from the same commit, with the sync engine unit tests passing. It has not been re-run on Renku OS for this release; the program's code is the same as 1.1.0, which was tested there (see the 1.1.0 release notes).
-- **Not tested:** signing in to a real Google account and syncing against it.
+- The Makefile change was not re-run on Haiku for this release.
 
-Check downloads with `sha256sum -c SHA256SUMS`.
+Check the download with `sha256sum -c SHA256SUMS`.

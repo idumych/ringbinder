@@ -19,19 +19,20 @@ two-way sync with Google Calendar and Google Contacts uses libcurl.
 
 ## Install
 
-**Haiku and Renku OS.** Download `ringbinder-1.1.1-1-x86_64.hpkg` from the
-[latest release](https://github.com/idumych/ringbinder/releases/latest) and
-install it from a Terminal:
+**Haiku and Renku OS.** Download `ringbinder-1.1.0-1-x86_64.hpkg` from the
+[1.1.0 release](https://github.com/idumych/ringbinder/releases/tag/v1.1.0)
+and install it from a Terminal:
 
 ```sh
-pkgman install ./ringbinder-1.1.1-1-x86_64.hpkg
+pkgman install ./ringbinder-1.1.0-1-x86_64.hpkg
 ```
 
 Ringbinder then appears under **Applications** in the Deskbar menu, and as
 `ringbinder` in the Terminal. It needs Haiku R1/beta6 or later (it has been
 tested on Renku OS) and libcurl, which pkgman installs if it's missing.
 
-**VitruvianOS.** Download `ringbinder_1.1.1-1_amd64.deb` from the same page
+**VitruvianOS.** Download `ringbinder_1.1.1-1_amd64.deb` from the
+[1.1.1 release](https://github.com/idumych/ringbinder/releases/tag/v1.1.1)
 and install it from a Terminal:
 
 ```sh
