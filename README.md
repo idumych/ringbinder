@@ -7,6 +7,10 @@ week-at-a-glance diary, and everything saved automatically.
 Native C++ against the Haiku API (Interface Kit + layout API). Optional
 two-way sync with Google Calendar and Google Contacts uses libcurl.
 
+![The Calendar tab: a two-page week spread with appointments, a birthday and a To Do item due today](screenshots/calendar.png)
+
+![The Planner tab: a year at a glance with colour-coded trips, a course and holidays](screenshots/planner.png)
+
 ## Install
 
 Download `ringbinder-1.0.1-1-x86_64.hpkg` from the
