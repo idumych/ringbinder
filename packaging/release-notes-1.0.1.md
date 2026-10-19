@@ -14,7 +14,8 @@ Requires Haiku R1/beta6 or later, plus libcurl (pkgman installs it if needed). U
 
 ## Tested
 
-- **Renku OS** nightly build00055 (hrev60072+253), x86_64: upgrade from 1.0.0 with data kept; New page is blank; typing into it, switching pages and quitting keeps the text. No output on stdout/stderr.
+- **Renku OS** nightly build00055 (hrev60072+253), x86_64, with this package: installs over 1.0.0 and from the release download (checksum OK); on a fresh first run, New page gives a blank page; no output on stdout/stderr.
+- Same source, built outside the package on Renku: typing into a new page, switching pages and quitting keeps the text, and the other pages are unchanged.
 - Built on Haiku R1/beta6 (hrev59866). Sync engine unit tests pass.
 - **Not tested:** signing in to a real Google account and syncing against it.
 
