@@ -1,15 +1,21 @@
 # Ringbinder
 
 A tabbed personal organizer for Haiku, modelled on the classic late-90s
-desktop organizers: a leather binder with coloured section tabs, a two-page
-week-at-a-glance diary, and everything saved automatically.
+desktop organizers: a leather ring binder with coloured section dividers,
+two-page spreads for each section, a week-at-a-glance diary, and everything
+saved automatically.
+
+Like a real binder, the tabs of the sections you have turned past move to
+the left-hand edge, and the ones still to come stay on the right.
 
 Native C++ against the Haiku API (Interface Kit + layout API). Optional
 two-way sync with Google Calendar and Google Contacts uses libcurl.
 
-![The Calendar tab: a two-page week spread with appointments, a birthday and a To Do item due today](screenshots/calendar.png)
+![The Calendar: a two-page week spread with appointments, a birthday and a To Do item due today](screenshots/calendar.png)
 
-![The Planner tab: a year at a glance with colour-coded trips, a course and holidays](screenshots/planner.png)
+![To Do: the task list with Overdue, Current, Future and Completed tabs on the left-hand page, and the selected task's card on the right](screenshots/todo.png)
+
+![The Planner: a single full-width year page with weekday columns, weekends as stripes and colour-coded trips, a course and holidays](screenshots/planner.png)
 
 ## Install
 
@@ -30,12 +36,12 @@ tested on Renku OS) and libcurl, which pkgman installs if it's missing.
 | Tab | What it does |
 |-----|--------------|
 | **Calendar** | Two-page week spread (Mon–Wed left, Thu–Sun right, binder rings in the middle). Double-click an empty day to add an appointment, double-click an entry to edit it. Anniversaries (★) and To Do items due that day (☐) appear automatically. |
-| **To Do** | Tasks with priority, due date, category and notes. Completed tasks drop to the bottom, struck through. |
-| **Address** | Contacts with an A–Z index bar along the top. |
-| **Calls** | Call log / call-back list (Outgoing, Incoming, Missed, Call back), with a completed flag. |
-| **Planner** | Year-at-a-glance: 12 months × 31 days, colour-coded by category. **Drag across days** to block out a vacation or trip. Weekends are shaded, today is outlined in red. |
-| **Notepad** | Pages with a table of contents; edits save when you change page, switch tab or quit. |
-| **Anniversary** | Birthdays and yearly dates sorted through the year, with a countdown ("in 12 days") and age shown on the Calendar. |
+| **To Do** | Tasks on the left-hand page, the selected task's card on the right. Tabs down the page edge show All, Overdue, Current (due within a week, or no due date), Future and Completed. Completed tasks drop to the bottom, struck through. |
+| **Address** | Contacts on the left-hand page with A–Z thumb tabs down its edge; the selected contact's card on the right. |
+| **Calls** | Call log / call-back list (Outgoing, Incoming, Missed, Call back) on the left, the selected call on the right, with a completed flag. |
+| **Planner** | A single full-width year page, punched for the rings. The columns are weekdays, as on a paper year planner, so weekends form vertical stripes; the 1st of each month has a red corner and today is outlined in red. **Drag across days** to block out a vacation or trip. |
+| **Notepad** | Contents on the left-hand page, the open page on the right; edits save when you change page, switch tab or quit. |
+| **Anniversary** | Half a year per spread, three months to a page, with each person's age and how soon the date comes up. Ages and anniversaries also appear on the Calendar. |
 
 ## Keyboard
 
@@ -153,9 +159,11 @@ rather than overwritten.
 |------|---------|
 | `App.cpp` | `BApplication`, loads the data store |
 | `BinderWindow.*` | Main window, menus, routes commands to the visible page |
-| `TabStrip.*` | Coloured tabs on the right, leather spine on the left |
+| `TabStrip.*` | Section tabs on both edges, the leather spine, and the Planner's punched ring margin |
+| `Spread.*` | An open two-page spread with the rings down the middle |
 | `Section.*` | Base class for a binder page, page header |
-| `RecordListSection.*` | Generic list page (To Do, Address, Calls, Anniversary) |
+| `RecordListSection.*` | Generic list spread with index tabs and a record card (To Do, Address, Calls) |
+| `AnniversarySection.*` | Half-year anniversary spread |
 | `SectionFactory.cpp` | Field and column definitions for the list pages |
 | `CalendarSection.*` | Week spread view |
 | `PlannerSection.*` | Year grid view |
