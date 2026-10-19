@@ -88,7 +88,7 @@ CROOT="$COSMOE_STAGE/usr"
 #    .cosmoe_rsrc section, which stripping keeps.
 make clean >/dev/null
 make COSMOE_ROOT="$CROOT" LDFLAGS="${LDFLAGS:-} -s"
-make test >/dev/null
+make test >"$WORK/test.log" 2>&1 || { cat "$WORK/test.log"; exit 1; }
 
 # 3. AppDir
 APPDIR="$ROOT/obj/AppDir"
