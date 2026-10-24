@@ -55,7 +55,7 @@ DEVEL_DIRECTORY := \
 include $(DEVEL_DIRECTORY)/etc/makefile-engine
 
 else
-## ---- VitruvianOS: the Haiku API on a Linux kernel -----------------------
+## ---- VitruvianOS: a BeOS-like OS based on Linux ---------------------------
 
 CXX      ?= g++
 CXXFLAGS ?= -O2 -g

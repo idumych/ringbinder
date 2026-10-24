@@ -1,6 +1,6 @@
 # Ringbinder
 
-A tabbed personal organizer for Haiku, Renku OS and VitruvianOS, modelled on the classic late-90s
+A tabbed personal organizer for Haiku, Renku OS and VitruvianOS (a BeOS-like OS based on Linux), modelled on the classic late-90s
 desktop organizers: a leather ring binder with coloured section dividers,
 two-page spreads for each section, a week-at-a-glance diary, and everything
 saved automatically.
